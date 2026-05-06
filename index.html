@@ -2,6 +2,29 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<link rel="manifest" id="manifest-placeholder">
+<meta name="theme-color" content="#C1694F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Meu Diário">
+<link rel="apple-touch-icon" id="apple-icon-placeholder">
+<script>
+// Inline manifest
+const manifestData = '{\n  "name": "Meu Diário de Bem-estar",\n  "short_name": "Meu Diário",\n  "description": "Registro de humor, rotina e bem-estar",\n  "start_url": "/",\n  "display": "standalone",\n  "background_color": "#FAF3E0",\n  "theme_color": "#C1694F",\n  "orientation": "portrait",\n  "icons": [\n    {"src": "data:image/png;base64,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", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},\n    {"src": "data:image/png;base64,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", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}\n  ]\n}';
+const blob = new Blob([manifestData], {type:'application/json'});
+const murl = URL.createObjectURL(blob);
+document.getElementById('manifest-placeholder').href = murl;
+// Apple icon
+const appleIcon = 'data:image/png;base64,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';
+document.getElementById('apple-icon-placeholder').href = appleIcon;
+// Inline SW
+if('serviceWorker' in navigator){
+  const swCode = "const CACHE='diario-v3';const ASSETS=['/'];\nself.addEventListener('install',e=>{self.skipWaiting();});\nself.addEventListener('activate',e=>{self.clients.claim();});\nself.addEventListener('fetch',e=>{if(!e.request.url.startsWith(self.location.origin))return;e.respondWith(fetch(e.request).catch(()=>caches.match('/')));});";
+  const swBlob = new Blob([swCode],{type:'application/javascript'});
+  const swUrl = URL.createObjectURL(swBlob);
+  navigator.serviceWorker.register(swUrl).catch(()=>{});
+}
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Meu Diário</title>
 <style>
@@ -513,6 +536,37 @@ textarea:focus{border-color:#C1694F}
       <span style="font-size:28px">🌿</span>
       <div><div style="font-size:15px;font-weight:700">Minha Rotina</div><div style="font-size:12px;color:#A08070;margin-top:2px">Consulte sua rotina estruturada</div></div>
     </div>
+    <div class="mais-item" onclick="goTo('dados')">
+      <span style="font-size:28px">💾</span>
+      <div><div style="font-size:15px;font-weight:700">Exportar / Importar dados</div><div style="font-size:12px;color:#A08070;margin-top:2px">Backup e migração dos seus registros</div></div>
+    </div>
+  </div>
+
+  <!-- DADOS -->
+  <div class="page" id="pg-dados">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:3px">
+      <button onclick="goTo('mais')" style="background:none;border:none;font-size:20px;cursor:pointer;color:#C1694F;padding:0">‹</button>
+      <div class="stitle" style="margin-bottom:0">Exportar / Importar 💾</div>
+    </div>
+    <div class="ssub">Faça backup ou migre seus dados para outro dispositivo</div>
+
+    <!-- EXPORTAR -->
+    <div class="rblock">
+      <div class="rbtitle">📤 Exportar meus dados</div>
+      <div style="font-size:12px;color:#A08070;margin-bottom:12px;line-height:1.6">Baixa um arquivo JSON com todos os seus registros — humores, hábitos, pensamentos e recompensas.</div>
+      <button onclick="exportarDados()" class="btn" style="margin-top:0">Baixar meus dados (JSON)</button>
+    </div>
+
+    <!-- IMPORTAR -->
+    <div class="rblock">
+      <div class="rbtitle">📥 Importar dados</div>
+      <div style="font-size:12px;color:#A08070;margin-bottom:12px;line-height:1.6">Cole aqui o conteúdo do arquivo JSON exportado para restaurar seus dados neste app.</div>
+      <textarea id="importJson" placeholder='Cole o conteúdo do arquivo .json aqui...' style="width:100%;border:1.5px solid #F0D5CC;border-radius:10px;padding:10px 12px;font-family:Georgia,serif;font-size:12px;color:#2C2C2C;resize:none;outline:none;background:#FAF3E0;min-height:120px;margin-bottom:10px"></textarea>
+      <button onclick="importarDados()" class="btn" style="margin-top:0;background:#8B5E52">Importar e restaurar dados</button>
+      <div id="importToast" class="toast"></div>
+    </div>
+
+    <div class="tip">⚠️ Importar substitui os dados atuais. Exporte primeiro se quiser guardar o que tem agora.</div>
   </div>
 
   <!-- SAÚDE -->
@@ -1634,6 +1688,93 @@ async function deletarPensamento(id){
   pensamentos=pensamentos.filter(p=>p.id!==id);
   await savePensamentos();
   renderPensamentos();
+}
+
+// ── EXPORTAR / IMPORTAR ──
+async function exportarDados(){
+  // Collect ALL data
+  const payload={
+    versao:"1.0",
+    exportado:new Date().toISOString(),
+    registros:allData,
+    recompensas,
+    pensamentos,
+    saudeItems,
+    rotina_items:ITEMS,
+  };
+
+  // Also try to pull from cloud storage in case localStorage is stale
+  try{
+    const keys=await sto.list("d:");
+    if(keys){
+      for(const k of keys){
+        const r=await sto.get(k);
+        if(r){try{const e=JSON.parse(r.value);payload.registros[e.date]=e;}catch{}}
+      }
+    }
+  }catch{}
+
+  const json=JSON.stringify(payload,null,2);
+  const blob=new Blob([json],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=`meu-diario-${todayStr()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function importarDados(){
+  const raw=document.getElementById("importJson").value.trim();
+  if(!raw){showToast("importToast","Cole o conteúdo do arquivo JSON primeiro.","err");return;}
+
+  let payload;
+  try{payload=JSON.parse(raw);}
+  catch{showToast("importToast","Arquivo inválido. Certifique-se de colar o JSON completo.","err");return;}
+
+  if(!payload.registros&&!payload.recompensas){
+    showToast("importToast","Formato não reconhecido. Use um arquivo exportado por este app.","err");
+    return;
+  }
+
+  if(!confirm(`Importar dados de ${payload.exportado?new Date(payload.exportado).toLocaleDateString("pt-BR"):"data desconhecida"}?\n\nIsso vai substituir seus dados atuais.`))return;
+
+  // Restore all data
+  if(payload.registros){
+    allData={...payload.registros};
+    ls.set(allData);
+    // Save each entry to cloud
+    for(const[date,e] of Object.entries(allData)){
+      await sto.set("d:"+date,JSON.stringify(e));
+    }
+  }
+  if(payload.recompensas){
+    recompensas=payload.recompensas;
+    ls.setArr("rc",recompensas);
+    await sto.set("recompensas",JSON.stringify(recompensas));
+  }
+  if(payload.pensamentos){
+    pensamentos=payload.pensamentos;
+    ls.setArr("pensamentos",pensamentos);
+    await sto.set("pensamentos",JSON.stringify(pensamentos));
+  }
+  if(payload.saudeItems){
+    saudeItems=payload.saudeItems;
+    ls.setArr("saude",saudeItems);
+    await sto.set("saude",JSON.stringify(saudeItems));
+  }
+  if(payload.rotina_items){
+    ITEMS=payload.rotina_items;
+    await saveITEMS();
+  }
+
+  prevLvl=1;
+  calcXP();
+  loadToday();
+  document.getElementById("importJson").value="";
+  showToast("importToast","✓ Dados importados com sucesso! 🧡","ok");
 }
 
 init();
