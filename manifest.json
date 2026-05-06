@@ -1,0 +1,24 @@
+{
+  "name": "Meu Diário de Bem-estar",
+  "short_name": "Meu Diário",
+  "description": "Registro de humor, rotina e bem-estar",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF3E0",
+  "theme_color": "#C1694F",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

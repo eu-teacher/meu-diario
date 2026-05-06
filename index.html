@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu Diário</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#FAF3E0;font-family:Georgia,serif;color:#2C2C2C;min-height:100vh;padding-bottom:80px}
+
+/* HEADER */
+.hdr{background:#C1694F;padding:14px 16px 12px;text-align:center}
+.hdr h1{font-size:19px;color:#fff;font-weight:600}
+.hdr .sub{font-size:10px;color:#F0D5CC;margin-top:2px;letter-spacing:1px;text-transform:uppercase}
+.hdr .dt{font-size:11px;color:rgba(255,255,255,.75);margin-top:4px;font-style:italic}
+
+/* LEVEL BAR */
+.lvl-bar{background:#8B5E52;padding:8px 16px 10px}
+.lvl-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.lvl-badge{display:flex;align-items:center;gap:7px}
+.lvl-name{font-size:13px;font-weight:700;color:#fff}
+.lvl-num{font-size:10px;color:#F0D5CC;letter-spacing:.5px;text-transform:uppercase}
+.lvl-xp{font-size:12px;color:#F0D5CC;font-weight:700}
+.xp-track{background:rgba(255,255,255,.2);border-radius:10px;height:7px;overflow:hidden}
+.xp-fill{height:100%;background:linear-gradient(90deg,#FAF3E0,#F0D5CC);border-radius:10px;transition:width .6s}
+
+/* BOTTOM NAV */
+.nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #F0D5CC;z-index:50;box-shadow:0 -2px 12px rgba(193,105,79,.12)}
+.nav-btn{flex:1;padding:8px 2px 10px;text-align:center;font-size:9px;font-weight:700;text-transform:uppercase;color:#C0A090;cursor:pointer;border:none;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;letter-spacing:.2px;font-family:Georgia,serif}
+.nav-btn.on{color:#C1694F}
+.nav-icon{font-size:19px;line-height:1}
+
+/* PAGES */
+.body{padding:16px 14px;max-width:480px;margin:0 auto}
+.page{display:none}.page.on{display:block}
+.stitle{font-size:17px;color:#C1694F;margin-bottom:3px;font-weight:600}
+.ssub{font-size:12px;color:#A08070;margin-bottom:14px}
+.card{background:#fff;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(193,105,79,.1)}
+.sbar{background:#F0D5CC;border-radius:8px;padding:7px 12px;font-size:11px;color:#8B5E52;text-align:center;margin-bottom:14px}
+
+/* MOOD */
+.mood-num{font-size:52px;font-weight:600;text-align:center;line-height:1;transition:color .3s}
+.mood-lbl{text-align:center;font-size:13px;color:#A08070;margin-top:2px;font-style:italic;margin-bottom:12px}
+input[type=range]{width:100%;accent-color:#C1694F;cursor:pointer;margin:4px 0}
+.scale{display:flex;justify-content:space-between;font-size:10px;color:#A08070;margin-top:3px}
+.nlbl{font-size:11px;color:#A08070;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+textarea{width:100%;border:1.5px solid #F0D5CC;border-radius:10px;padding:10px 12px;font-family:Georgia,serif;font-size:13px;color:#2C2C2C;resize:none;outline:none;background:#FAF3E0;min-height:68px}
+textarea:focus{border-color:#C1694F}
+
+/* CHECKLIST */
+.gtitle{font-size:11px;color:#A08070;text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px;font-weight:700}
+.ci{display:flex;align-items:center;gap:10px;padding:10px 13px;background:#fff;border-radius:11px;margin-bottom:6px;cursor:pointer;border:1.5px solid transparent}
+.ci.on{background:#F0D5CC;border-color:#C1694F}
+.cbox{width:22px;height:22px;border-radius:6px;border:2px solid #F0D5CC;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:900;color:transparent}
+.ci.on .cbox{background:#C1694F;border-color:#C1694F;color:#fff}
+.cpts{font-size:10px;font-weight:700;color:#A08070;background:#F0D5CC;padding:2px 7px;border-radius:10px;flex-shrink:0}
+.ci.on .cpts{background:#C1694F;color:#fff}
+.ci.on .clabel{color:#8B5E52}
+
+/* PROGRESS */
+.pbarW{background:#F0D5CC;border-radius:8px;height:7px;margin:10px 0 3px;overflow:hidden}
+.pbar{height:100%;background:#C1694F;border-radius:8px;transition:width .4s;width:0%}
+.plbl{font-size:11px;color:#A08070;text-align:right}
+
+/* BUTTON */
+.btn{width:100%;padding:14px;background:#C1694F;color:#fff;border:none;border-radius:12px;font-family:Georgia,serif;font-size:13px;font-weight:700;cursor:pointer;margin-top:12px;text-transform:uppercase}
+.btn:active{background:#8B5E52}.btn:disabled{background:#C0A090}
+.toast{text-align:center;padding:10px;font-size:13px;font-weight:700;display:none;margin-top:8px}
+.toast.ok{color:#5A9B6B}.toast.err{color:#B5503A}
+
+/* CALENDÁRIO */
+.cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.cal-btn{background:none;border:none;font-size:24px;cursor:pointer;color:#C1694F;padding:2px 10px}
+.cal-label{font-size:15px;font-weight:700}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:8px}
+.cdow{text-align:center;font-size:10px;font-weight:700;color:#A08070;padding:3px 0}
+.cday{aspect-ratio:1;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px solid transparent;background:#fff;position:relative}
+.cday:active{opacity:.7}
+.cday.vazio{background:transparent;cursor:default;border:none}
+.cday.hoje{border-color:#C1694F!important}
+.cday.futuro{opacity:.3;cursor:default}
+.cday .cn{font-size:12px;font-weight:700}
+.cday .cdot{width:5px;height:5px;border-radius:50%;margin-top:1px;background:#F0D5CC}
+.cday.hA{background:#5A9B6B}.cday.hB{background:#8B9B5A}.cday.hC{background:#B09080}.cday.hD{background:#C1694F}.cday.hE{background:#9B4040}
+.cday.hA .cn,.cday.hB .cn,.cday.hC .cn,.cday.hD .cn,.cday.hE .cn{color:#fff}
+.cal-legenda{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.leg{display:flex;align-items:center;gap:4px;font-size:10px;color:#8B5E52}
+.ldot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+/* HISTÓRICO */
+.hentry{background:#fff;border-radius:13px;padding:13px;margin-bottom:10px;box-shadow:0 1px 7px rgba(193,105,79,.08)}
+.hhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.hdate{font-size:13px;font-weight:600}
+.hmood{font-size:21px;font-weight:600}
+.hicons{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
+.hnote{font-size:11px;color:#A08070;font-style:italic;margin-top:6px;padding-top:6px;border-top:1px solid #F0D5CC}
+.wchart{display:flex;align-items:flex-end;gap:5px;height:50px;margin:8px 0 2px}
+.wbw{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.wb{width:100%;border-radius:3px 3px 0 0;min-height:3px}
+.wday{font-size:9px}.wval{font-size:9px;color:#8B5E52;font-weight:700}
+.empty{text-align:center;padding:32px 16px;color:#A08070;font-style:italic;font-size:13px;line-height:1.7}
+
+/* RESUMO */
+.res-hdr{background:linear-gradient(135deg,#C1694F,#8B5E52);border-radius:14px;padding:16px;margin-bottom:14px;color:#fff;text-align:center}
+.hab-item{margin-bottom:9px}
+.hab-top{display:flex;justify-content:space-between;margin-bottom:3px}
+.hab-bar{background:#F0D5CC;border-radius:6px;height:7px;overflow:hidden}
+.hab-fill{height:100%;border-radius:6px}
+.imp-item,.prox-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #F0D5CC;align-items:flex-start}
+.imp-item:last-child,.prox-item:last-child{border-bottom:none}
+.prox-num{width:20px;height:20px;border-radius:50%;background:#C1694F;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.conquista{background:#F0D5CC;border-radius:10px;padding:9px 12px;margin-bottom:7px;display:flex;gap:9px;align-items:center}
+
+/* NÍVEIS */
+.lv-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.lv-card{background:#fff;border-radius:12px;padding:13px;text-align:center;box-shadow:0 1px 7px rgba(193,105,79,.08);border:2px solid transparent}
+.lv-card.cur{border-color:#C1694F;background:#FFF8F5}
+.lv-card.locked{opacity:.4}
+
+/* RECOMPENSAS */
+.rc-card{background:#fff;border-radius:14px;padding:13px 15px;margin-bottom:9px;display:flex;gap:12px;align-items:center;border:2px solid transparent;box-shadow:0 1px 7px rgba(193,105,79,.08);position:relative}
+.rc-card.ok{border-color:#5A9B6B;background:#F6FBF7;cursor:pointer}
+.rc-card.lock{opacity:.6}
+.rc-del{position:absolute;top:7px;right:9px;font-size:15px;cursor:pointer;color:#C0A090;background:none;border:none}
+.add-rc{background:#FAF3E0;border:2px dashed #F0D5CC;border-radius:13px;padding:14px;margin-top:4px}
+.add-row{display:flex;gap:7px;margin-bottom:9px;align-items:center}
+.add-in{flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px 10px;font-family:Georgia,serif;font-size:13px;color:#2C2C2C;outline:none;background:#fff}
+.add-in:focus{border-color:#C1694F}
+.add-sel{border:1.5px solid #F0D5CC;border-radius:9px;padding:8px 7px;font-family:Georgia,serif;font-size:12px;color:#2C2C2C;outline:none;background:#fff;cursor:pointer}
+
+/* ROTINA */
+.anchor{background:#C1694F;border-radius:13px;padding:13px 15px;margin-bottom:14px;text-align:center}
+.rblock{background:#fff;border-radius:13px;padding:14px;margin-bottom:12px;box-shadow:0 1px 7px rgba(193,105,79,.08)}
+.rbtitle{font-size:14px;color:#C1694F;margin-bottom:9px;font-weight:600}
+.rrow{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid #F0D5CC;align-items:flex-start}
+.rrow:last-child{border-bottom:none}
+.rtime{font-size:11px;color:#A08070;width:50px;flex-shrink:0;font-weight:700;padding-top:1px}
+.rtxt{font-size:12px;line-height:1.5;flex:1}
+.tip{background:#F0D5CC;border-radius:11px;padding:12px 14px;text-align:center;font-size:12px;color:#8B5E52;font-style:italic;line-height:1.6;margin-top:4px}
+
+/* MAIS */
+.mais-item{display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px;margin-bottom:10px;cursor:pointer;box-shadow:0 1px 7px rgba(193,105,79,.08)}
+.mais-item:active{opacity:.7}
+
+/* SAÚDE */
+.sf-btn{padding:6px 12px;border-radius:20px;border:1.5px solid #F0D5CC;background:#fff;font-family:Georgia,serif;font-size:11px;font-weight:700;color:#A08070;cursor:pointer}
+.sf-btn.sf-on{background:#C1694F;border-color:#C1694F;color:#fff}
+.saude-item{background:#fff;border-radius:13px;padding:13px 15px;margin-bottom:9px;box-shadow:0 1px 7px rgba(193,105,79,.08);display:flex;gap:12px;align-items:flex-start}
+.saude-item.feito{opacity:.55}
+.saude-check{width:24px;height:24px;border-radius:50%;border:2px solid #F0D5CC;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;margin-top:1px;font-size:13px;transition:all .15s}
+.saude-item.agendado .saude-check{border-color:#CC8B3A}
+.saude-item.feito .saude-check{background:#5A9B6B;border-color:#5A9B6B;color:#fff}
+
+/* PENSAMENTOS TCC */
+.passo-block{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid #F0D5CC}
+.passo-num{width:26px;height:26px;border-radius:50%;background:#C1694F;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.passo-body{flex:1}
+.passo-title{font-size:13px;font-weight:700;color:#2C2C2C;margin-bottom:2px}
+.passo-desc{font-size:11px;color:#A08070;line-height:1.5;font-style:italic}
+.p-card{background:#fff;border-radius:13px;padding:14px;margin-bottom:10px;box-shadow:0 1px 7px rgba(193,105,79,.08);border-left:4px solid #C1694F}
+.p-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.p-reducao{background:#5A9B6B;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px}
+.p-reducao.pior{background:#B5503A}
+
+/* MODALS */
+.modal{position:fixed;top:0;left:0;right:0;bottom:0;z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;background:rgba(0,0,0,.5)}
+.modal.show{opacity:1;pointer-events:all}
+.modal-box{background:#FAF3E0;border-radius:20px;padding:24px 20px;max-width:300px;width:88%;transform:scale(.85);transition:transform .3s cubic-bezier(.34,1.56,.64,1);text-align:center}
+.modal.show .modal-box{transform:scale(1)}
+.modal-close{position:absolute;top:12px;right:14px;font-size:22px;cursor:pointer;color:#A08070;background:none;border:none}
+
+/* DAY MODAL (scrollable) */
+.dmodal{position:fixed;top:0;left:0;right:0;bottom:0;z-index:500;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .2s;background:rgba(0,0,0,.5)}
+.dmodal.show{opacity:1;pointer-events:all}
+.dmodal-box{background:#FAF3E0;margin:16px 12px 40px;border-radius:18px;padding:18px 14px;max-width:460px;margin-left:auto;margin-right:auto;position:relative}
+
+/* XP POP */
+.xppop{position:fixed;font-size:14px;font-weight:700;color:#C1694F;pointer-events:none;z-index:600;animation:xpfly 1.2s ease forwards}
+@keyframes xpfly{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-44px)}}
+
+/* CONFETTI */
+.cf-wrap{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:700;overflow:hidden}
+.cf{position:absolute;border-radius:2px;animation:cffall linear forwards}
+@keyframes cffall{0%{opacity:1;transform:translateY(-10px) rotate(0)}100%{opacity:0;transform:translateY(100vh) rotate(720deg)}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>Meu Diário de Bem-estar</h1>
+  <div class="sub">Bipolaridade · Rotina · Humor</div>
+  <div class="dt" id="todayLbl"></div>
+</div>
+
+<div class="lvl-bar">
+  <div class="lvl-top">
+    <div class="lvl-badge">
+      <span style="font-size:20px" id="lvlIcon">🌱</span>
+      <div>
+        <div class="lvl-name" id="lvlName">Sementinha</div>
+        <div class="lvl-num" id="lvlNum">Nível 1</div>
+      </div>
+    </div>
+    <div class="lvl-xp" id="lvlXp">0 XP</div>
+  </div>
+  <div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+</div>
+
+<!-- MODAL LEVEL UP -->
+<div class="modal" id="lvlModal">
+  <div class="modal-box">
+    <div style="font-size:52px;margin-bottom:8px" id="lvlEmoji">🌿</div>
+    <div style="font-size:18px;font-weight:700;color:#C1694F;margin-bottom:6px">Você subiu de nível!</div>
+    <div style="font-size:13px;color:#8B5E52;line-height:1.5;margin-bottom:16px" id="lvlMsg"></div>
+    <button class="btn" style="margin-top:0" onclick="closeModal('lvlModal')">Obrigada 🧡</button>
+  </div>
+</div>
+
+<!-- MODAL SORTEIO -->
+<div class="modal" id="sorteioModal">
+  <div class="modal-box">
+    <div style="background:linear-gradient(135deg,#C1694F,#8B5E52);margin:-24px -20px 16px;padding:20px;border-radius:16px 16px 0 0">
+      <div style="font-size:52px;line-height:1;margin-bottom:6px" id="sorteioEmoji">🎁</div>
+      <div style="font-size:11px;font-weight:700;color:#F0D5CC;text-transform:uppercase;letter-spacing:1px">🎉 Você chegou a 80%!</div>
+    </div>
+    <div style="font-size:19px;font-weight:700;color:#C1694F;margin-bottom:8px;line-height:1.3" id="sorteioNome"></div>
+    <div style="font-size:13px;color:#8B5E52;line-height:1.5;margin-bottom:16px">Você se cuidou e <strong>merece</strong> essa recompensa! 🧡</div>
+    <button class="btn" style="margin-top:0" onclick="closeModal('sorteioModal')">Eu mereço! 🧡</button>
+    <div style="font-size:12px;color:#A08070;margin-top:10px;cursor:pointer" onclick="sortearNovamente()">sortear outra recompensa</div>
+  </div>
+</div>
+
+<!-- MODAL PENSAMENTO -->
+<div class="dmodal" id="pensamentoModal">
+  <div class="dmodal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:16px;font-weight:700;color:#C1694F">🧠 Registro de Pensamento</div>
+      <button style="background:none;border:none;font-size:22px;cursor:pointer;color:#A08070" onclick="closePensamento()">✕</button>
+    </div>
+
+    <!-- PASSO 1: SITUAÇÃO -->
+    <div class="passo-block">
+      <div class="passo-num">1</div>
+      <div class="passo-body">
+        <div class="passo-title">Situação</div>
+        <div class="passo-desc">O que aconteceu? Onde você estava? O que estava fazendo?</div>
+        <textarea id="p_situacao" placeholder="Ex: Estava no celular e vi uma foto de amigos saindo sem me chamar..." style="width:100%;border:1.5px solid #F0D5CC;border-radius:10px;padding:9px 11px;font-family:Georgia,serif;font-size:13px;resize:none;outline:none;background:#FAF3E0;min-height:60px;margin-top:8px"></textarea>
+      </div>
+    </div>
+
+    <!-- PASSO 2: EMOÇÃO -->
+    <div class="passo-block">
+      <div class="passo-num">2</div>
+      <div class="passo-body">
+        <div class="passo-title">Emoção e intensidade</div>
+        <div class="passo-desc">O que você sentiu? Qual a intensidade de 0 a 100?</div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input id="p_emocao" placeholder="Ex: Tristeza, raiva..." style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px 10px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0">
+          <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+            <input type="number" id="p_intensidade_antes" min="0" max="100" placeholder="%" style="width:58px;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0;text-align:center">
+            <span style="font-size:11px;color:#A08070">%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASSO 3: PENSAMENTO AUTOMÁTICO -->
+    <div class="passo-block">
+      <div class="passo-num">3</div>
+      <div class="passo-body">
+        <div class="passo-title">Pensamento automático</div>
+        <div class="passo-desc">O que passou pela sua cabeça nesse momento? Que crença surgiu?</div>
+        <textarea id="p_pensamento" placeholder='Ex: "Ninguém gosta de mim", "Eu sempre estrago tudo", "Não vou conseguir"...' style="width:100%;border:1.5px solid #F0D5CC;border-radius:10px;padding:9px 11px;font-family:Georgia,serif;font-size:13px;resize:none;outline:none;background:#FAF3E0;min-height:60px;margin-top:8px"></textarea>
+        <div style="display:flex;align-items:center;gap:5px;margin-top:6px">
+          <span style="font-size:12px;color:#A08070">Quanto você acredita nesse pensamento?</span>
+          <input type="number" id="p_crenca" min="0" max="100" placeholder="%" style="width:55px;border:1.5px solid #F0D5CC;border-radius:9px;padding:6px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0;text-align:center">
+          <span style="font-size:11px;color:#A08070">%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASSO 4: EVIDÊNCIAS A FAVOR -->
+    <div class="passo-block">
+      <div class="passo-num">4</div>
+      <div class="passo-body">
+        <div class="passo-title">Evidências a favor</div>
+        <div class="passo-desc">Que fatos (não sentimentos) apoiam esse pensamento?</div>
+        <textarea id="p_favor" placeholder="Ex: Realmente não me chamaram dessa vez..." style="width:100%;border:1.5px solid #F0D5CC;border-radius:10px;padding:9px 11px;font-family:Georgia,serif;font-size:13px;resize:none;outline:none;background:#FAF3E0;min-height:60px;margin-top:8px"></textarea>
+      </div>
+    </div>
+
+    <!-- PASSO 5: EVIDÊNCIAS CONTRA -->
+    <div class="passo-block">
+      <div class="passo-num">5</div>
+      <div class="passo-body">
+        <div class="passo-title">Evidências contra</div>
+        <div class="passo-desc">Que fatos contradizem esse pensamento? O que uma amiga diria?</div>
+        <textarea id="p_contra" placeholder="Ex: Outras pessoas me chamaram semana passada. Tenho amizades que valorizo..." style="width:100%;border:1.5px solid #F0D5CC;border-radius:10px;padding:9px 11px;font-family:Georgia,serif;font-size:13px;resize:none;outline:none;background:#FAF3E0;min-height:60px;margin-top:8px"></textarea>
+      </div>
+    </div>
+
+    <!-- PASSO 6: PENSAMENTO ALTERNATIVO -->
+    <div class="passo-block">
+      <div class="passo-num">6</div>
+      <div class="passo-body">
+        <div class="passo-title">Pensamento alternativo</div>
+        <div class="passo-desc">Com base nas evidências, qual seria um pensamento mais equilibrado?</div>
+        <textarea id="p_alternativo" placeholder='Ex: "Não fui chamada dessa vez, mas isso não significa que ninguém gosta de mim. Tenho outras amizades."' style="width:100%;border:1.5px solid #F0D5CC;border-radius:10px;padding:9px 11px;font-family:Georgia,serif;font-size:13px;resize:none;outline:none;background:#FAF3E0;min-height:60px;margin-top:8px"></textarea>
+      </div>
+    </div>
+
+    <!-- PASSO 7: RESULTADO -->
+    <div class="passo-block" style="border-bottom:none">
+      <div class="passo-num" style="background:#5A9B6B">7</div>
+      <div class="passo-body">
+        <div class="passo-title">Como você se sente agora?</div>
+        <div class="passo-desc">Mesma emoção do passo 2 — qual a intensidade agora?</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+          <span style="font-size:13px;color:#2C2C2C">Intensidade atual:</span>
+          <input type="number" id="p_intensidade_depois" min="0" max="100" placeholder="%" style="width:62px;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0;text-align:center">
+          <span style="font-size:11px;color:#A08070">%</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="pToast" class="toast"></div>
+    <button class="btn" onclick="salvarPensamento()" style="margin-top:14px">Salvar registro 🧠</button>
+  </div>
+</div>
+
+<!-- MODAL EDITAR DIA -->
+<div class="dmodal" id="dayModal">
+  <div class="dmodal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:16px;font-weight:700;color:#C1694F" id="dmTitle">Dia</div>
+      <button style="background:none;border:none;font-size:22px;cursor:pointer;color:#A08070" onclick="closeDay()">✕</button>
+    </div>
+    <div class="card">
+      <div class="mood-num" id="dmNum" style="color:#C1694F">5</div>
+      <div class="mood-lbl" id="dmLbl">Neutro</div>
+      <input type="range" min="1" max="10" value="5" id="dmSlider" oninput="dmMood(this.value)">
+      <div class="scale"><span>1 — muito difícil</span><span>10 — ótima</span></div>
+    </div>
+    <div style="margin-bottom:12px">
+      <div class="nlbl">Como você se sentiu?</div>
+      <div id="dmEmoGrid" style="display:flex;flex-wrap:wrap;gap:7px;margin-top:6px"></div>
+    </div>
+    <div style="margin-bottom:12px">
+      <div class="nlbl">Por que você se sentiu assim?</div>
+      <textarea id="dmMotivo" placeholder="Ex: dormi mal, discussão, dia produtivo..."></textarea>
+    </div>
+    <div style="margin-bottom:12px">
+      <div class="nlbl">Nota do dia</div>
+      <textarea id="dmNote" placeholder="Como foi esse dia?"></textarea>
+    </div>
+    <div style="font-size:13px;color:#C1694F;font-weight:600;margin-bottom:8px">Rotina do dia</div>
+    <div onclick="dmToggleSemAula()" id="dmSemAulaToggle" style="display:flex;align-items:center;gap:10px;background:#fff;border-radius:11px;padding:10px 13px;margin-bottom:8px;cursor:pointer;border:1.5px solid #F0D5CC">
+      <span style="font-size:16px">📚</span>
+      <span style="font-size:13px;flex:1;color:#2C2C2C">Esse dia não teve aula</span>
+      <div id="dmSemAulaSwitch" style="width:36px;height:20px;border-radius:10px;background:#F0D5CC;position:relative;transition:background .2s;flex-shrink:0">
+        <div id="dmSemAulaKnob" style="width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></div>
+      </div>
+    </div>
+    <div id="dmList"></div>
+    <div id="dmToast" class="toast"></div>
+    <button class="btn" onclick="saveDay()">Salvar este dia ⭐</button>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="body">
+
+  <!-- HOJE -->
+  <div class="page on" id="pg-hoje">
+    <div class="sbar" id="syncStatus">🔄 Carregando...</div>
+    <div class="stitle">Como você está hoje?</div>
+    <div class="ssub">Cada hábito vale pontos de XP ⭐</div>
+
+    <!-- HUMOR GERAL -->
+    <div class="card">
+      <div class="mood-num" id="moodNum" style="color:#C1694F">5</div>
+      <div class="mood-lbl" id="moodLbl">Neutro</div>
+      <input type="range" min="1" max="10" value="5" id="moodSlider" oninput="setMood(this.value)">
+      <div class="scale"><span>1 — muito difícil</span><span>10 — ótima</span></div>
+    </div>
+
+    <!-- EMOÇÕES -->
+    <div style="margin-bottom:14px">
+      <div class="nlbl">Como você se sente? (pode marcar várias)</div>
+      <div id="emoGrid" style="display:flex;flex-wrap:wrap;gap:7px;margin-top:6px"></div>
+    </div>
+
+    <!-- MOTIVO -->
+    <div style="margin-bottom:14px">
+      <div class="nlbl">Por que você se sente assim?</div>
+      <textarea id="motivoArea" placeholder="Ex: dormi mal, discussão, dia produtivo, ansiedade com consulta..." oninput="saveDraft()"></textarea>
+    </div>
+
+    <!-- NOTA GERAL -->
+    <div style="margin-bottom:14px">
+      <div class="nlbl">Nota do dia (opcional)</div>
+      <textarea id="noteArea" placeholder="Algo mais que queira registrar sobre hoje?" oninput="saveDraft()"></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="stitle">Rotina de hoje</div>
+      <span id="doneCount" style="font-size:13px;color:#C1694F;font-weight:700">0/9</span>
+    </div>
+    <div class="pbarW"><div class="pbar" id="pbar"></div></div>
+    <div class="plbl" id="pct" style="margin-bottom:2px">0% cumprido</div>
+
+    <!-- TOGGLE SEM AULA -->
+    <div onclick="toggleSemAula()" id="semAulaToggle" style="display:flex;align-items:center;gap:10px;background:#fff;border-radius:11px;padding:10px 13px;margin:10px 0 4px;cursor:pointer;border:1.5px solid #F0D5CC">
+      <span style="font-size:16px">📚</span>
+      <span style="font-size:13px;flex:1;color:#2C2C2C">Hoje não tenho aula</span>
+      <div id="semAulaSwitch" style="width:36px;height:20px;border-radius:10px;background:#F0D5CC;position:relative;transition:background .2s;flex-shrink:0">
+        <div id="semAulaKnob" style="width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></div>
+      </div>
+    </div>
+    <div id="checklist"></div>
+    <div id="toast" class="toast"></div>
+    <button class="btn" id="saveBtn" onclick="saveToday()">Salvar e ganhar XP ⭐</button>
+  </div>
+
+  <!-- CALENDÁRIO -->
+  <div class="page" id="pg-cal">
+    <div class="stitle">Calendário</div>
+    <div class="ssub">Toque em qualquer dia para editar</div>
+    <div class="cal-nav">
+      <button class="cal-btn" onclick="navCal(-1)">‹</button>
+      <div class="cal-label" id="calLabel"></div>
+      <button class="cal-btn" onclick="navCal(1)">›</button>
+    </div>
+    <div class="cal-legenda">
+      <div class="leg"><div class="ldot" style="background:#5A9B6B"></div>8-10</div>
+      <div class="leg"><div class="ldot" style="background:#8B9B5A"></div>6-7</div>
+      <div class="leg"><div class="ldot" style="background:#B09080"></div>5</div>
+      <div class="leg"><div class="ldot" style="background:#C1694F"></div>3-4</div>
+      <div class="leg"><div class="ldot" style="background:#9B4040"></div>1-2</div>
+    </div>
+    <div class="cal-grid" id="calDow"></div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div class="page" id="pg-hist">
+    <div class="stitle">Histórico</div>
+    <div class="ssub">Seus registros anteriores</div>
+    <div id="histContent"></div>
+  </div>
+
+  <!-- RESUMO -->
+  <div class="page" id="pg-resumo">
+    <div class="stitle">Resumo Semanal</div>
+    <div class="ssub">Análise dos seus últimos 7 dias</div>
+    <button class="btn" style="margin-bottom:14px" onclick="gerarResumo()">🔄 Gerar resumo</button>
+    <div id="resumoContent"></div>
+  </div>
+
+  <!-- RECOMPENSAS -->
+  <div class="page" id="pg-recomp">
+    <div class="stitle">Minhas Recompensas 🎁</div>
+    <div class="ssub">Você ganha quando se cuida. Simples assim. 🧡</div>
+    <div class="card">
+      <div style="font-size:11px;color:#8B5E52;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Progresso este mês</div>
+      <div style="font-size:38px;font-weight:700;color:#C1694F;line-height:1" id="mesPct">0%</div>
+      <div style="font-size:12px;color:#A08070;margin-top:2px;margin-bottom:10px" id="mesSub">de hábitos cumpridos</div>
+      <div class="pbarW"><div class="pbar" id="mesBar"></div></div>
+      <div style="font-size:11px;color:#A08070;margin-top:4px" id="mesDias"></div>
+    </div>
+    <div id="sorteioArea" style="display:none;margin-bottom:14px">
+      <button onclick="iniciarSorteio()" style="width:100%;padding:15px;background:linear-gradient(135deg,#C1694F,#8B5E52);color:#fff;border:none;border-radius:13px;font-family:Georgia,serif;font-size:14px;font-weight:700;cursor:pointer">🎉 Sortear minha recompensa do mês!</button>
+      <div style="text-align:center;font-size:11px;color:#8B5E52;margin-top:5px;font-style:italic" id="sorteioJaFeito"></div>
+    </div>
+    <div id="rcLista"></div>
+    <div class="add-rc">
+      <div style="font-size:13px;font-weight:700;color:#8B5E52;margin-bottom:10px">✨ Adicionar recompensa</div>
+      <div class="add-row">
+        <input class="add-in" id="rcEmoji" placeholder="🎁" maxlength="2" style="width:52px;flex:none;text-align:center;font-size:18px">
+        <input class="add-in" id="rcNome" placeholder="Nome da recompensa">
+      </div>
+      <div class="add-row">
+        <select class="add-sel" id="rcCat">
+          <option value="comprar">🛍️ Comprar</option>
+          <option value="fazer">🌟 Fazer</option>
+          <option value="experiência">✨ Experiência</option>
+          <option value="cuidado">💆 Autocuidado</option>
+        </select>
+        <input type="number" class="add-in" id="rcMeta" placeholder="80" min="10" max="100" style="width:65px;flex:none">
+        <span style="font-size:12px;color:#A08070;white-space:nowrap">% do mês</span>
+      </div>
+      <button class="btn" style="margin-top:0" onclick="addRc()">Adicionar 🎁</button>
+    </div>
+  </div>
+
+  <!-- MAIS -->
+  <div class="page" id="pg-mais">
+    <div class="stitle">Mais opções</div>
+    <div class="ssub">Outros recursos do seu diário</div>
+    <div class="mais-item" onclick="goTo('saude')">
+      <span style="font-size:28px">🩺</span>
+      <div><div style="font-size:15px;font-weight:700">Saúde</div><div style="font-size:12px;color:#A08070;margin-top:2px">Consultas, exames e cuidados para não perder de vista</div></div>
+    </div>
+    <div class="mais-item" onclick="goTo('pensamentos')">
+      <span style="font-size:28px">🧠</span>
+      <div><div style="font-size:15px;font-weight:700">Registro de Pensamentos</div><div style="font-size:12px;color:#A08070;margin-top:2px">TCC — identifique e questione pensamentos automáticos</div></div>
+    </div>
+    <div class="mais-item" onclick="goTo('niveis')">
+      <span style="font-size:28px">⭐</span>
+      <div><div style="font-size:15px;font-weight:700">Níveis e XP</div><div style="font-size:12px;color:#A08070;margin-top:2px">Veja seu progresso e conquistas</div></div>
+    </div>
+    <div class="mais-item" onclick="goTo('rot')">
+      <span style="font-size:28px">🌿</span>
+      <div><div style="font-size:15px;font-weight:700">Minha Rotina</div><div style="font-size:12px;color:#A08070;margin-top:2px">Consulte sua rotina estruturada</div></div>
+    </div>
+  </div>
+
+  <!-- SAÚDE -->
+  <div class="page" id="pg-saude">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:3px">
+      <button onclick="goTo('mais')" style="background:none;border:none;font-size:20px;cursor:pointer;color:#C1694F;padding:0">‹</button>
+      <div class="stitle" style="margin-bottom:0">Saúde 🩺</div>
+    </div>
+    <div class="ssub">Consultas, exames e cuidados — tudo em um lugar</div>
+
+    <!-- ADD FORM -->
+    <div style="background:#fff;border-radius:14px;padding:14px;margin-bottom:14px;box-shadow:0 2px 10px rgba(193,105,79,.1)">
+      <div style="display:flex;gap:8px;margin-bottom:9px">
+        <input id="saude_nome" placeholder="Ex: Consulta psiquiatra, Exame de sangue..." style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px 11px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0">
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <select id="saude_cat" style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:12px;outline:none;background:#FAF3E0">
+          <option value="consulta">🧑‍⚕️ Consulta</option>
+          <option value="exame">🔬 Exame</option>
+          <option value="medicamento">💊 Medicamento</option>
+          <option value="retorno">🔄 Retorno</option>
+          <option value="outro">📋 Outro</option>
+        </select>
+        <input id="saude_data" type="date" style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:12px;outline:none;background:#FAF3E0;color:#2C2C2C">
+      </div>
+      <input id="saude_obs" placeholder="Observação (opcional)" style="width:100%;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px 11px;font-family:Georgia,serif;font-size:12px;outline:none;background:#FAF3E0;margin-bottom:10px">
+      <button onclick="addSaude()" class="btn" style="margin-top:0">Adicionar</button>
+    </div>
+
+    <!-- FILTERS -->
+    <div style="display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap" id="saudeFiltros">
+      <button onclick="setSaudeFiltro('todos')" id="sf_todos" class="sf-btn sf-on">Todos</button>
+      <button onclick="setSaudeFiltro('pendente')" id="sf_pendente" class="sf-btn">⏳ Pendentes</button>
+      <button onclick="setSaudeFiltro('agendado')" id="sf_agendado" class="sf-btn">📅 Agendados</button>
+      <button onclick="setSaudeFiltro('feito')" id="sf_feito" class="sf-btn">✅ Feitos</button>
+    </div>
+
+    <div id="saudeLista"></div>
+  </div>
+
+  <!-- PENSAMENTOS AUTOMÁTICOS -->
+  <div class="page" id="pg-pensamentos">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:3px">
+      <button onclick="goTo('mais')" style="background:none;border:none;font-size:20px;cursor:pointer;color:#C1694F;padding:0">‹</button>
+      <div class="stitle" style="margin-bottom:0">Registro de Pensamentos</div>
+    </div>
+    <div class="ssub">Ferramenta de TCC para questionar pensamentos automáticos</div>
+
+    <div style="background:#F0D5CC;border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#8B5E52;line-height:1.6">
+      💜 <strong>Como usar:</strong> Quando sentir uma emoção intensa, preencha este registro. O objetivo não é pensar positivo — é pensar <em>com mais precisão</em>.
+    </div>
+
+    <button onclick="abrirNovoPensamento()" class="btn" style="margin-bottom:16px">➕ Novo registro de pensamento</button>
+
+    <div id="pensamentosLista"></div>
+  </div>
+
+  <!-- NÍVEIS -->
+  <div class="page" id="pg-niveis">
+    <div class="stitle">Seus Níveis ⭐</div>
+    <div class="ssub">Cada dia de cuidado te leva mais longe 🧡</div>
+    <div class="card" id="lvlAtual"></div>
+    <div class="lv-grid" id="lvlGrid"></div>
+    <div class="tip" style="margin-top:10px">Hábitos de alto impacto valem mais XP. Completar o dia inteiro dá +30 XP de bônus. 🌱</div>
+  </div>
+
+  <!-- ROTINA -->
+  <div class="page" id="pg-rot">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+      <div class="stitle">Minha Rotina</div>
+      <button onclick="toggleEditRot()" id="editRotBtn" style="background:none;border:1.5px solid #C1694F;color:#C1694F;border-radius:8px;padding:5px 12px;font-family:Georgia,serif;font-size:11px;font-weight:700;cursor:pointer">✏️ Editar</button>
+    </div>
+    <div class="ssub">Toque em "Editar" para personalizar seus hábitos</div>
+
+    <div class="anchor">
+      <div style="font-size:10px;color:#F0D5CC;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">⚓ Âncora mais importante</div>
+      <div style="font-size:17px;color:#fff;font-weight:600">Acordar às 8h30 todo dia</div>
+      <div style="font-size:11px;color:#F0D5CC;margin-top:3px;font-style:italic">incluindo sexta, sábado e domingo</div>
+    </div>
+
+    <!-- HÁBITOS RASTREADOS (editáveis) -->
+    <div class="rblock">
+      <div class="rbtitle">✅ Hábitos que você rastreia todo dia</div>
+      <div style="font-size:11px;color:#A08070;margin-bottom:10px;font-style:italic">Estes aparecem no seu checklist diário</div>
+      <div id="rotHabitos"></div>
+      <!-- FORM ADICIONAR (aparece no modo edição) -->
+      <div id="rotAddForm" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #F0D5CC">
+        <div style="font-size:12px;font-weight:700;color:#8B5E52;margin-bottom:8px">➕ Novo hábito</div>
+        <div style="display:flex;gap:7px;margin-bottom:8px">
+          <input id="rotEmoji" placeholder="🌟" maxlength="2" style="width:48px;text-align:center;font-size:17px;border:1.5px solid #F0D5CC;border-radius:9px;padding:7px;outline:none;background:#FAF3E0;font-family:Georgia,serif;flex-shrink:0">
+          <input id="rotNome" placeholder="Nome do hábito" style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:7px 10px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0">
+        </div>
+        <div style="display:flex;gap:7px;margin-bottom:10px">
+          <select id="rotGrupo" style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:7px;font-family:Georgia,serif;font-size:12px;outline:none;background:#FAF3E0">
+            <option value="manhã">🌅 Manhã</option>
+            <option value="comida">🍽️ Alimentação</option>
+            <option value="noite">🌙 Noite</option>
+          </select>
+          <select id="rotImp" style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:7px;font-family:Georgia,serif;font-size:12px;outline:none;background:#FAF3E0">
+            <option value="A">Alto impacto (20 XP)</option>
+            <option value="B">Médio impacto (10 XP)</option>
+          </select>
+        </div>
+        <button onclick="addHabito()" style="width:100%;padding:11px;background:#C1694F;color:#fff;border:none;border-radius:10px;font-family:Georgia,serif;font-size:13px;font-weight:700;cursor:pointer">Adicionar hábito</button>
+      </div>
+    </div>
+
+    <!-- REFERÊNCIA HORÁRIOS (estática) -->
+    <div class="rblock">
+      <div class="rbtitle">🕐 Referência de horários</div>
+      <div class="rrow"><span class="rtime">8h30</span><span class="rtxt">Acordar. Sem celular por 15 min. Luz natural.</span></div>
+      <div class="rrow"><span class="rtime">8h45</span><span class="rtxt">Café da manhã — sentada, sem tela.</span></div>
+      <div class="rrow"><span class="rtime">9h15</span><span class="rtxt">20–30 min de caminhada ou dança em casa.</span></div>
+      <div class="rrow"><span class="rtime">10h</span><span class="rtxt">Planejamento de aulas, e-mails, admin.</span></div>
+      <div class="rrow"><span class="rtime">11h30</span><span class="rtxt">Almoço — refeição de verdade. Não pule.</span></div>
+      <div class="rrow"><span class="rtime">12h30</span><span class="rtxt">Pronta para as aulas.</span></div>
+      <div class="rrow"><span class="rtime">Ao terminar aula</span><span class="rtxt">Anotar humor. Sem redes sociais por 30 min.</span></div>
+      <div class="rrow"><span class="rtime">23h30</span><span class="rtxt">Na cama — mesmo que não durma logo.</span></div>
+    </div>
+    <div class="tip">O objetivo não é perfeição — é âncora.<br>Um dia de cada vez. 🧡</div>
+  </div>
+
+</div><!-- end body -->
+
+<!-- BOTTOM NAV -->
+<nav class="nav">
+  <button class="nav-btn on" onclick="goTo('hoje',this)"><span class="nav-icon">☀️</span>Hoje</button>
+  <button class="nav-btn" onclick="goTo('cal',this)"><span class="nav-icon">📅</span>Cal.</button>
+  <button class="nav-btn" onclick="goTo('resumo',this)"><span class="nav-icon">📊</span>Resumo</button>
+  <button class="nav-btn" onclick="goTo('recomp',this)"><span class="nav-icon">🎁</span>Metas</button>
+  <button class="nav-btn" onclick="goTo('mais',this)"><span class="nav-icon">⋯</span>Mais</button>
+</nav>
+
+<script>
+// ── DATA ──
+const EMOCOES=[
+  {id:"feliz",     e:"😄",l:"Feliz",       cor:"#5A9B6B"},
+  {id:"animada",   e:"🤩",l:"Animada",     cor:"#8B9B2A"},
+  {id:"tranquila", e:"😌",l:"Tranquila",   cor:"#5A8B9B"},
+  {id:"grata",     e:"🥰",l:"Grata",       cor:"#9B5A8B"},
+  {id:"neutra",    e:"😐",l:"Neutra",      cor:"#B09080"},
+  {id:"ansiosa",   e:"😰",l:"Ansiosa",     cor:"#CC8B3A"},
+  {id:"irritada",  e:"😠",l:"Irritada",    cor:"#C1694F"},
+  {id:"frustrada", e:"😤",l:"Frustrada",   cor:"#B5503A"},
+  {id:"triste",    e:"😔",l:"Triste",      cor:"#6B7A9B"},
+  {id:"chorosa",   e:"😢",l:"Chorosa",     cor:"#7A6B9B"},
+  {id:"exausta",   e:"😩",l:"Exausta",     cor:"#8B7B6B"},
+  {id:"entorpecida",e:"😶",l:"Entorpecida",cor:"#9B9B9B"},
+  {id:"euforica",  e:"🌪️",l:"Eufórica",   cor:"#C17A2A"},
+  {id:"sobrecarregada",e:"🤯",l:"Sobrecarregada",cor:"#B54A6A"},
+];
+
+const MLBL={1:"Muito difícil",2:"Muito difícil",3:"Difícil",4:"Difícil",5:"Neutro",6:"Okay",7:"Bem",8:"Bem",9:"Muito bem",10:"Ótima!"};
+const MCOL={1:"#9B4040",2:"#B5503A",3:"#C1694F",4:"#CC7755",5:"#B09080",6:"#8B7355",7:"#7A8B5A",8:"#6B9B5A",9:"#5A9B6B",10:"#4A8B7A"};
+const GLAB={"manhã":"🌅 Manhã","comida":"🍽️ Alimentação","noite":"🌙 Noite"};
+const LEVELS=[
+  {n:1,name:"Sementinha", icon:"🌱",min:0,   msg:"Você plantou a primeira semente do cuidado! 🌱"},
+  {n:2,name:"Broto",      icon:"🌿",min:150, msg:"Você está crescendo! Cada dia conta. 🌿"},
+  {n:3,name:"Florzinha",  icon:"🌸",min:400, msg:"Sua consistência está florescendo. Que lindo! 🌸"},
+  {n:4,name:"Raiz Forte", icon:"🌳",min:750, msg:"Você está construindo raízes sólidas de autocuidado. 🌳"},
+  {n:5,name:"Luz do Sol", icon:"☀️",min:1300,msg:"Você brilha com sua dedicação diária. ☀️"},
+  {n:6,name:"Guerreira",  icon:"💜",min:2000,msg:"Sua força e gentileza consigo mesma são inspiradoras. 💜"},
+  {n:7,name:"Florescendo",icon:"🌺",min:3000,msg:"Você chegou lá. Florescendo todos os dias. 🌺"},
+];
+
+let ITEMS_DEFAULT=[
+  {id:"wake", l:"Acordei às 8h30",           i:"☀️", g:"manhã",  imp:"A",xp:20,m:"O horário fixo de acordar é a âncora circadiana mais importante para o cérebro bipolar."},
+  {id:"bfast",l:"Café da manhã sem tela",     i:"☕", g:"manhã",  imp:"B",xp:10,m:"Iniciar o dia com calma evita sobrecarga sensorial matinal."},
+  {id:"move", l:"Me movi (caminhada/dança)",  i:"🚶‍♀️",g:"manhã",  imp:"A",xp:20,m:"Exercício aeróbico tem efeito comprovado na estabilização do humor bipolar."},
+  {id:"lunch",l:"Almoço de verdade",          i:"🥗", g:"manhã",  imp:"A",xp:15,m:"Queda de glicose é gatilho direto para instabilidade de humor."},
+  {id:"meals",l:"3 refeições completas",      i:"🍽️",g:"comida", imp:"A",xp:15,m:"Alimentação regular estabiliza glicemia e serotonina."},
+  {id:"water",l:"Bebi água ao longo do dia",  i:"💧", g:"comida", imp:"B",xp:10,m:"Desidratação afeta humor — especialmente com lítio."},
+  {id:"log",  l:"Registrei meu humor",        i:"📝", g:"noite",  imp:"B",xp:10,m:"O automonitoramento ajuda a identificar padrões precoces."},
+  {id:"nosc", l:"Sem telas 30 min após aula", i:"📵", g:"noite",  imp:"A",xp:20,m:"Luz azul suprime melatonina — gatilho para episódios bipolares."},
+  {id:"bed",  l:"Na cama até 23h30",          i:"🌙", g:"noite",  imp:"A",xp:20,m:"Sono irregular é o principal gatilho de episódios bipolares."},
+];
+let ITEMS=[...ITEMS_DEFAULT];
+
+let chk={}, allData={}, recompensas=[], useCloud=false, totalXP=0, prevLvl=1;
+let semAula=false, selectedEmos=[], editRotMode=false;
+let dmDate="", dmChk={}, dmSemAula=false, dmEmos=[];
+let calY=new Date().getFullYear(), calM=new Date().getMonth();
+
+// ── STORAGE ──
+const sto={
+  get:k=>new Promise(r=>{const t=setTimeout(()=>r(null),3000);try{window.storage.get(k).then(v=>{clearTimeout(t);r(v)}).catch(()=>{clearTimeout(t);r(null)})}catch{clearTimeout(t);r(null)}}),
+  set:(k,v)=>new Promise(r=>{const t=setTimeout(()=>r(false),3000);try{window.storage.set(k,v).then(()=>{clearTimeout(t);r(true)}).catch(()=>{clearTimeout(t);r(false)})}catch{clearTimeout(t);r(false)}}),
+  list:p=>new Promise(r=>{const t=setTimeout(()=>r(null),3000);try{window.storage.list(p).then(v=>{clearTimeout(t);r(v?.keys||[])}).catch(()=>{clearTimeout(t);r(null)})}catch{clearTimeout(t);r(null)}}),
+};
+const ls={
+  get:()=>{try{return JSON.parse(localStorage.getItem("td")||"{}")}catch{return{}}},
+  set:d=>{try{localStorage.setItem("td",JSON.stringify(d))}catch{}},
+  getArr:k=>{try{return JSON.parse(localStorage.getItem(k)||"[]")}catch{return[]}},
+  setArr:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}},
+};
+
+// ── INIT ──
+async function init(){
+  setStatus("🔄 Carregando...");
+  const keys=await sto.list("d:");
+  if(keys!==null){
+    useCloud=true;
+    const entries={};
+    for(const k of keys){const r=await sto.get(k);if(r){try{const e=JSON.parse(r.value);entries[e.date]=e}catch{}}}
+    allData={...ls.get(),...entries};
+    for(const[date,e] of Object.entries(allData)) await sto.set("d:"+date,JSON.stringify(e));
+    ls.set(allData);
+    setStatus("☁️ Dados salvos na nuvem");
+  } else {
+    allData=ls.get();
+    setStatus("💾 Salvo localmente");
+  }
+  const rv=await sto.get("recompensas");
+  if(rv){try{recompensas=JSON.parse(rv.value)}catch{}}
+  if(!recompensas.length) recompensas=ls.getArr("rc");
+  // Load custom routine
+  const ri=await sto.get("rotina_items");
+  if(ri){try{ITEMS=JSON.parse(ri.value)}catch{}}
+  else{const li=ls.getArr("rotina_items");if(li.length)ITEMS=li;}
+  await loadPensamentos();
+  await loadSaude();
+  calcXP(); loadToday();
+  // date label
+  const n=new Date();
+  const ds=["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"];
+  const ms=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+  document.getElementById("todayLbl").textContent=`${ds[n.getDay()]}, ${n.getDate()} de ${ms[n.getMonth()]}`;
+}
+
+function setStatus(m){const s=document.getElementById("syncStatus");if(s)s.textContent=m;}
+function todayStr(){return new Date().toISOString().split("T")[0];}
+function fmtD(s){const[,m,d]=s.split("-");const ms=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];return`${parseInt(d)} de ${ms[parseInt(m)-1]}`;}
+
+// ── XP / LEVEL ──
+function calcXP(){
+  totalXP=0;
+  Object.values(allData).forEach(e=>{
+    if(!e.chk)return;
+    const active=e.noClass?ITEMS.filter(i=>i.id!=="nosc"):ITEMS;
+    active.forEach(it=>{if(e.chk[it.id])totalXP+=it.xp;});
+    if(active.every(it=>e.chk[it.id]))totalXP+=30;
+  });
+  const prev=prevLvl;
+  const lv=getLevel(totalXP);
+  const next=LEVELS.find(l=>l.n===lv.n+1);
+  const pct=next?Math.round((totalXP-lv.min)/(next.min-lv.min)*100):100;
+  document.getElementById("lvlIcon").textContent=lv.icon;
+  document.getElementById("lvlName").textContent=lv.name;
+  document.getElementById("lvlNum").textContent="Nível "+lv.n;
+  document.getElementById("lvlXp").textContent=totalXP+" XP";
+  document.getElementById("xpFill").style.width=pct+"%";
+  if(lv.n>prev){
+    document.getElementById("lvlEmoji").textContent=lv.icon;
+    document.getElementById("lvlMsg").innerHTML=`Agora você é <strong>${lv.name}</strong>!<br>${lv.msg}`;
+    openModal("lvlModal");
+  }
+  prevLvl=lv.n;
+}
+function getLevel(xp){for(let i=LEVELS.length-1;i>=0;i--)if(xp>=LEVELS[i].min)return LEVELS[i];return LEVELS[0];}
+
+// ── NAV ──
+function goTo(name, el){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("on"));
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("on"));
+  const pg=document.getElementById("pg-"+name);
+  if(pg)pg.classList.add("on");
+  if(el)el.classList.add("on");
+  else{
+    // highlight matching nav btn
+    document.querySelectorAll(".nav-btn").forEach(b=>{
+      if((b.getAttribute("onclick")||"").includes("'"+name+"'"))b.classList.add("on");
+    });
+  }
+  window.scrollTo(0,0);
+  if(name==="hist")renderHist();
+  if(name==="niveis")renderNiveis();
+  if(name==="recomp")renderRecomp();
+  if(name==="cal")renderCal();
+  if(name==="hoje")renderEmoGridMain();
+  if(name==="rot")renderRotHabitos();
+  if(name==="pensamentos")renderPensamentos();
+  if(name==="saude")renderSaude();
+}
+
+// ── MOOD ──
+// ── EMOÇÕES ──
+function buildEmoGrid(containerId, selectedArr){
+  document.getElementById(containerId).innerHTML=EMOCOES.map(e=>{
+    const sel=selectedArr.includes(e.id);
+    return`<div onclick="toggleEmo('${e.id}','${containerId}',${containerId==='emoGrid'?'selectedEmos':'dmEmos'})" id="emo-${containerId}-${e.id}"
+      style="display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:20px;cursor:pointer;border:2px solid ${sel?e.cor:"#F0D5CC"};background:${sel?e.cor+"22":"#fff"};transition:all .15s">
+      <span style="font-size:15px">${e.e}</span>
+      <span style="font-size:11px;font-weight:700;color:${sel?e.cor:"#A08070"}">${e.l}</span>
+    </div>`;
+  }).join("");
+}
+
+function toggleEmo(id, containerId, arr){
+  // arr is a reference issue in inline — use containerId to decide
+  const isMain=containerId==='emoGrid';
+  const target=isMain?selectedEmos:dmEmos;
+  const idx=target.indexOf(id);
+  if(idx>-1)target.splice(idx,1);else target.push(id);
+  buildEmoGrid(containerId, target);
+}
+
+function toggleEmoMain(id){
+  const idx=selectedEmos.indexOf(id);
+  if(idx>-1)selectedEmos.splice(idx,1);else selectedEmos.push(id);
+  renderEmoGridMain();
+  saveDraft();
+}
+function toggleEmoDm(id){
+  const idx=dmEmos.indexOf(id);
+  if(idx>-1)dmEmos.splice(idx,1);else dmEmos.push(id);
+  buildEmoGrid('dmEmoGrid',dmEmos);
+}
+
+function renderEmoGridMain(){
+  document.getElementById('emoGrid').innerHTML=EMOCOES.map(e=>{
+    const sel=selectedEmos.includes(e.id);
+    return`<div onclick="toggleEmoMain('${e.id}')" style="display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:20px;cursor:pointer;border:2px solid ${sel?e.cor:"#F0D5CC"};background:${sel?e.cor+"22":"#fff"};transition:all .15s">
+      <span style="font-size:15px">${e.e}</span>
+      <span style="font-size:11px;font-weight:700;color:${sel?e.cor:"#A08070"}">${e.l}</span>
+    </div>`;
+  }).join("");
+}
+function renderEmoGridDm(){
+  document.getElementById('dmEmoGrid').innerHTML=EMOCOES.map(e=>{
+    const sel=dmEmos.includes(e.id);
+    return`<div onclick="toggleEmoDm('${e.id}')" style="display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:20px;cursor:pointer;border:2px solid ${sel?e.cor:"#F0D5CC"};background:${sel?e.cor+"22":"#fff"};transition:all .15s">
+      <span style="font-size:15px">${e.e}</span>
+      <span style="font-size:11px;font-weight:700;color:${sel?e.cor:"#A08070"}">${e.l}</span>
+    </div>`;
+  }).join("");
+}
+
+function setMood(v){
+  v=parseInt(v);
+  document.getElementById("moodNum").textContent=v;
+  document.getElementById("moodNum").style.color=MCOL[v];
+  document.getElementById("moodLbl").textContent=MLBL[v];
+  saveDraft();
+}
+
+// ── CHECKLIST ──
+function toggleSemAula(){
+  semAula=!semAula;
+  const sw=document.getElementById("semAulaSwitch"),kn=document.getElementById("semAulaKnob");
+  sw.style.background=semAula?"#C1694F":"#F0D5CC";
+  kn.style.left=semAula?"18px":"2px";
+  buildChecklist();
+  saveDraft();
+}
+
+function buildChecklist(){
+  const activeItems=semAula?ITEMS.filter(i=>i.id!=="nosc"):ITEMS;
+  let h="";
+  ["manhã","comida","noite"].forEach(g=>{
+    const gItems=ITEMS.filter(i=>i.g===g);
+    h+=`<div class="gtitle">${GLAB[g]}</div>`;
+    gItems.forEach(it=>{
+      if(it.id==="nosc"&&semAula){
+        h+=`<div class="ci" style="opacity:.4;cursor:default">
+          <div class="cbox" style="background:#F0D5CC;border-color:#F0D5CC;color:#A08070">—</div>
+          <span style="font-size:15px">${it.i}</span>
+          <span style="font-size:13px;flex:1;color:#A08070">${it.l}</span>
+          <span style="font-size:10px;color:#A08070;background:#F0D5CC;padding:2px 7px;border-radius:10px">sem aula</span>
+        </div>`;
+      } else {
+        h+=`<div class="ci ${chk[it.id]?"on":""}" id="ci-${it.id}" onclick="toggle('${it.id}')">
+          <div class="cbox" id="cb-${it.id}">${chk[it.id]?"✓":""}</div>
+          <span style="font-size:15px">${it.i}</span>
+          <span class="clabel" style="font-size:13px;flex:1">${it.l}</span>
+          <span class="cpts">+${it.xp}XP</span>
+        </div>`;
+      }
+    });
+  });
+  document.getElementById("checklist").innerHTML=h;
+  updateProg();
+}
+
+function updateProg(){
+  const activeItems=semAula?ITEMS.filter(i=>i.id!=="nosc"):ITEMS;
+  const done=activeItems.filter(i=>chk[i.id]).length;
+  const pct=Math.round(done/activeItems.length*100);
+  document.getElementById("doneCount").textContent=done+"/"+activeItems.length;
+  document.getElementById("pbar").style.width=pct+"%";
+  document.getElementById("pct").textContent=pct+"% cumprido";
+}
+function xpPop(el,txt){
+  const p=document.createElement("div");p.className="xppop";p.textContent=txt;
+  const r=el.getBoundingClientRect();
+  p.style.left=(r.left+r.width/2-20)+"px";p.style.top=(r.top+window.scrollY-8)+"px";
+  document.body.appendChild(p);setTimeout(()=>p.remove(),1300);
+}
+function toggle(id){
+  if(id==="nosc"&&semAula)return;
+  chk[id]=!chk[id];
+  const ci=document.getElementById("ci-"+id),cb=document.getElementById("cb-"+id);
+  if(chk[id]){ci.classList.add("on");cb.textContent="✓";xpPop(ci,"+"+ITEMS.find(i=>i.id===id).xp+" XP");}
+  else{ci.classList.remove("on");cb.textContent="";}
+  updateProg();
+  saveDraft();
+}
+
+// ── LOAD TODAY ──
+// ── RASCUNHO AUTOMÁTICO ──
+function draftKey(){return "draft_"+todayStr();}
+
+function saveDraft(){
+  const draft={
+    mood:parseInt(document.getElementById("moodSlider")?.value||5),
+    note:document.getElementById("noteArea")?.value||"",
+    motivo:document.getElementById("motivoArea")?.value||"",
+    emocoes:[...selectedEmos],
+    chk:{...chk},
+    noClass:semAula,
+    ts:Date.now()
+  };
+  try{localStorage.setItem(draftKey(),JSON.stringify(draft));}catch{}
+}
+
+function loadDraft(){
+  try{
+    const raw=localStorage.getItem(draftKey());
+    if(!raw)return null;
+    return JSON.parse(raw);
+  }catch{return null;}
+}
+
+function clearDraft(){
+  try{localStorage.removeItem(draftKey());}catch{}
+}
+
+function loadToday(){
+  const td=todayStr();
+  const saved=allData[td];
+  const draft=loadDraft();
+
+  // Use draft if it's newer than saved, or if no saved entry
+  const useDraft=draft&&(!saved||(draft.ts>(new Date(saved.saved||0).getTime())));
+  const src=useDraft?draft:saved;
+
+  if(src){
+    document.getElementById("moodSlider").value=src.mood||5;
+    setMood(src.mood||5);
+    chk=src.chk||{};
+    document.getElementById("noteArea").value=src.note||"";
+    document.getElementById("motivoArea").value=src.motivo||"";
+    selectedEmos=src.emocoes||[];
+    semAula=src.noClass||false;
+    const sw=document.getElementById("semAulaSwitch"),kn=document.getElementById("semAulaKnob");
+    if(sw){sw.style.background=semAula?"#C1694F":"#F0D5CC";kn.style.left=semAula?"18px":"2px";}
+    if(useDraft&&saved){
+      // show indicator that draft was restored
+      showToast("toast","📝 Rascunho restaurado — não esqueça de salvar!","ok");
+    }
+  }
+  renderEmoGridMain();
+  buildChecklist();
+}
+
+// ── SAVE TODAY ──
+async function saveToday(){
+  const btn=document.getElementById("saveBtn");
+  btn.disabled=true;btn.textContent="Salvando...";
+  const td=todayStr(),mood=parseInt(document.getElementById("moodSlider").value),note=document.getElementById("noteArea").value;
+  const motivo=document.getElementById("motivoArea").value;
+  const entry={date:td,mood,emocoes:[...selectedEmos],motivo,chk:{...chk},note,noClass:semAula,saved:new Date().toISOString()};
+  allData[td]=entry;ls.set(allData);
+  clearDraft(); // draft confirmed, clear it
+  let ok=true;if(useCloud)ok=await sto.set("d:"+td,JSON.stringify(entry));
+  const activeItems=semAula?ITEMS.filter(i=>i.id!=="nosc"):ITEMS;
+  const allDone=activeItems.every(i=>chk[i.id]);
+  const xpE=activeItems.reduce((s,i)=>chk[i.id]?s+i.xp:s,0)+(allDone?30:0);
+  prevLvl=getLevel(totalXP).n;calcXP();
+  btn.disabled=false;btn.textContent="Salvar e ganhar XP ⭐";
+  showToast("toast",`⭐ +${xpE} XP! ${ok&&useCloud?"☁️ Salvo na nuvem":"💾 Salvo localmente"}`,"ok");
+}
+
+// ── CALENDÁRIO ──
+function navCal(d){calM+=d;if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;}renderCal();}
+function renderCal(){
+  const MN=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  document.getElementById("calLabel").textContent=`${MN[calM]} ${calY}`;
+  const td=todayStr(),fd=new Date(calY,calM,1).getDay(),dim=new Date(calY,calM+1,0).getDate();
+  document.getElementById("calDow").innerHTML=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(d=>`<div class="cdow">${d}</div>`).join("");
+  let h="";
+  for(let i=0;i<fd;i++)h+=`<div class="cday vazio"></div>`;
+  for(let d=1;d<=dim;d++){
+    const ds=`${calY}-${String(calM+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const isT=ds===td,isF=ds>td,e=allData[ds];
+    let cls="cday"+(isT?" hoje":"")+(isF?" futuro":"");
+    let inner=`<div class="cn">${d}</div>`;
+    if(e){
+      const m=e.mood||5;
+      cls+=m>=8?" hA":m>=6?" hB":m===5?" hC":m>=3?" hD":" hE";
+    } else {
+      inner+=`<div class="cdot"></div>`;
+    }
+    h+=`<div class="${cls}"${!isF?` onclick="openDay('${ds}')"`:""}>${inner}</div>`;
+  }
+  document.getElementById("calGrid").innerHTML=h;
+}
+
+// ── DAY MODAL ──
+function openDay(ds){
+  dmDate=ds;const e=allData[ds];
+  document.getElementById("dmTitle").textContent=fmtD(ds);
+  const mood=e?.mood||5;dmChk=e?.chk?{...e.chk}:{};dmSemAula=e?.noClass||false;
+  dmEmos=e?.emocoes?[...e.emocoes]:[];
+  document.getElementById("dmSlider").value=mood;dmMood(mood);
+  document.getElementById("dmNote").value=e?.note||"";
+  document.getElementById("dmMotivo").value=e?.motivo||"";
+  const sw=document.getElementById("dmSemAulaSwitch"),kn=document.getElementById("dmSemAulaKnob");
+  sw.style.background=dmSemAula?"#C1694F":"#F0D5CC";kn.style.left=dmSemAula?"18px":"2px";
+  renderEmoGridDm();
+  buildDmList();document.getElementById("dmToast").style.display="none";
+  document.getElementById("dayModal").classList.add("show");
+  document.getElementById("dayModal").scrollTop=0;
+}
+function closeDay(){document.getElementById("dayModal").classList.remove("show");}
+function dmMood(v){v=parseInt(v);document.getElementById("dmNum").textContent=v;document.getElementById("dmNum").style.color=MCOL[v];document.getElementById("dmLbl").textContent=MLBL[v];}
+function dmToggleSemAula(){
+  dmSemAula=!dmSemAula;
+  const sw=document.getElementById("dmSemAulaSwitch"),kn=document.getElementById("dmSemAulaKnob");
+  sw.style.background=dmSemAula?"#C1694F":"#F0D5CC";kn.style.left=dmSemAula?"18px":"2px";
+  buildDmList();
+}
+function buildDmList(){
+  let h="";
+  ["manhã","comida","noite"].forEach(g=>{
+    h+=`<div class="gtitle">${GLAB[g]}</div>`;
+    ITEMS.filter(i=>i.g===g).forEach(it=>{
+      if(it.id==="nosc"&&dmSemAula){
+        h+=`<div class="ci" style="opacity:.4;cursor:default">
+          <div class="cbox" style="background:#F0D5CC;border-color:#F0D5CC;color:#A08070">—</div>
+          <span style="font-size:15px">${it.i}</span>
+          <span style="font-size:13px;flex:1;color:#A08070">${it.l}</span>
+          <span style="font-size:10px;color:#A08070;background:#F0D5CC;padding:2px 7px;border-radius:10px">sem aula</span>
+        </div>`;
+      } else {
+        h+=`<div class="ci ${dmChk[it.id]?"on":""}" id="dci-${it.id}" onclick="dmToggle('${it.id}')">
+          <div class="cbox" id="dcb-${it.id}">${dmChk[it.id]?"✓":""}</div>
+          <span style="font-size:15px">${it.i}</span>
+          <span style="font-size:13px;flex:1">${it.l}</span>
+          <span class="cpts">+${it.xp}XP</span>
+        </div>`;
+      }
+    });
+  });
+  document.getElementById("dmList").innerHTML=h;
+}
+function dmToggle(id){
+  dmChk[id]=!dmChk[id];
+  const ci=document.getElementById("dci-"+id),cb=document.getElementById("dcb-"+id);
+  if(dmChk[id]){ci.classList.add("on");cb.textContent="✓";}else{ci.classList.remove("on");cb.textContent="";}
+}
+async function saveDay(){
+  const mood=parseInt(document.getElementById("dmSlider").value);
+  const note=document.getElementById("dmNote").value;
+  const motivo=document.getElementById("dmMotivo").value;
+  const entry={date:dmDate,mood,emocoes:[...dmEmos],motivo,chk:{...dmChk},note,noClass:dmSemAula,saved:new Date().toISOString()};
+  allData[dmDate]=entry;ls.set(allData);
+  if(useCloud)await sto.set("d:"+dmDate,JSON.stringify(entry));
+  prevLvl=getLevel(totalXP).n;calcXP();renderCal();
+  showToast("dmToast","✓ Salvo! ⭐","ok");
+  setTimeout(closeDay,1600);
+}
+
+// ── HISTÓRICO ──
+function renderHist(){
+  const entries=Object.values(allData).sort((a,b)=>b.date.localeCompare(a.date));
+  const td=todayStr();
+  const last7=Array.from({length:7},(_,i)=>{
+    const d=new Date();d.setDate(d.getDate()-(6-i));
+    const ds=d.toISOString().split("T")[0];
+    const dys=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+    return{ds,lbl:dys[d.getDay()],mood:allData[ds]?.mood||null,isT:ds===td};
+  });
+  let h="";
+  if(last7.some(d=>d.mood)){
+    h+=`<div class="card"><div style="font-size:11px;color:#A08070;margin-bottom:7px;font-weight:700;text-transform:uppercase">Humor esta semana</div><div class="wchart">`;
+    last7.forEach(d=>{const ht=d.mood?Math.round(d.mood/10*38):3;const bg=d.mood?(d.isT?"#C1694F":"#F0D5CC"):"#EEE";h+=`<div class="wbw"><div class="wval">${d.mood||"–"}</div><div class="wb" style="height:${ht}px;background:${bg}"></div><div class="wday" style="font-weight:${d.isT?700:400};color:${d.isT?"#C1694F":"#A08070"}">${d.lbl}</div></div>`;});
+    h+=`</div></div>`;
+  }
+  if(!entries.length){h+=`<div class="empty">Nenhum registro ainda.<br>Registre seu primeiro dia! 🧡</div>`;}
+  else entries.forEach(e=>{
+    const done=ITEMS.filter(i=>e.chk?.[i.id]).length,p=Math.round(done/ITEMS.length*100);
+    const xpE=ITEMS.reduce((s,i)=>e.chk?.[i.id]?s+i.xp:s,0)+(ITEMS.every(i=>e.chk?.[i.id])?30:0);
+    const icons=ITEMS.map(i=>`<span style="font-size:14px;opacity:${e.chk?.[i.id]?1:.2}">${i.i}</span>`).join("");
+    h+=`<div class="hentry"><div class="hhdr"><div class="hdate">${fmtD(e.date)}</div><div style="display:flex;align-items:center;gap:7px"><div class="hmood" style="color:${MCOL[e.mood]||"#C1694F"}">${e.mood}<span style="font-size:10px;color:#A08070;font-weight:300">/10</span></div><span style="font-size:10px;background:#F0D5CC;color:#8B5E52;padding:2px 6px;border-radius:7px;font-weight:700">⭐${xpE}</span></div></div><div style="background:#F0D5CC;border-radius:4px;height:4px;overflow:hidden"><div style="height:100%;background:#C1694F;width:${p}%"></div></div><div style="font-size:10px;color:#A08070;margin-top:2px">${p}% da rotina</div><div class="hicons">${icons}</div>${e.note?`<div class="hnote">"${e.note}"</div>`:""}</div>`;
+  });
+  document.getElementById("histContent").innerHTML=h;
+}
+
+// ── RESUMO ──
+function gerarResumo(){
+  const last7d=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-i);return d.toISOString().split("T")[0];}).reverse();
+  const semana=last7d.map(ds=>allData[ds]).filter(Boolean);
+  if(!semana.length){document.getElementById("resumoContent").innerHTML=`<div class="empty">Sem registros esta semana. Registre pelo menos 1 dia. 🧡</div>`;return;}
+  const dias=semana.length,mH=semana.reduce((s,e)=>s+(e.mood||5),0)/dias;
+  const tF=semana.reduce((s,e)=>s+ITEMS.filter(i=>e.chk?.[i.id]).length,0);
+  const pG=Math.round(tF/(ITEMS.length*dias)*100);
+  const xpS=semana.reduce((s,e)=>s+ITEMS.reduce((a,i)=>e.chk?.[i.id]?a+i.xp:a,0)+(ITEMS.every(i=>e.chk?.[i.id])?30:0),0);
+  const hS=ITEMS.map(it=>{const f=semana.filter(e=>e.chk?.[it.id]).length;return{...it,f,pct:Math.round(f/dias*100)};}).sort((a,b)=>b.pct-a.pct);
+  const bF=hS.filter(h=>h.pct>=70),mel=hS.filter(h=>h.pct<70).sort((a,b)=>a.pct-b.pct);
+  const nF=Math.round((pG/100*7+mH/10*3)*10)/10;
+  let rot,det;
+  if(nF>=8){rot="Semana muito boa! 🌟";det="Você manteve ótima consistência.";}
+  else if(nF>=6){rot="Semana razoável 👍";det="Teve altos e baixos, mas você se cuidou.";}
+  else if(nF>=4){rot="Semana difícil 💪";det="Algumas coisas ficaram pra trás — e tudo bem.";}
+  else{rot="Semana muito pesada 🧡";det="Você passou por algo difícil. Isso também passa.";}
+  const barras=hS.map(h=>{const c=h.pct>=70?"#5A9B6B":h.pct>=40?"#CC7755":"#9B4040";return`<div class="hab-item"><div class="hab-top"><span style="font-size:12px">${h.i} ${h.l}</span><span style="font-size:12px;font-weight:700;color:${c}">${h.pct}%</span></div><div class="hab-bar"><div class="hab-fill" style="width:${h.pct}%;background:${c}"></div></div></div>`;}).join("");
+  const conq=bF.length?bF.map(h=>`<div class="conquista"><span style="font-size:18px">${h.i}</span><div style="font-size:12px;color:#8B5E52"><strong>${h.l}</strong><br>${h.f} de ${dias} dias — ${h.pct}% ✅</div></div>`).join(""):`<div style="font-size:13px;color:#A08070;font-style:italic;padding:8px 0">Nenhum hábito com 70%+ ainda — mas você está começando. 🧡</div>`;
+  const altR=mel.filter(h=>h.imp==="A");
+  const imp=altR.length?altR.map(h=>`<div class="imp-item"><span style="font-size:16px;flex-shrink:0;margin-top:1px">⚠️</span><div style="font-size:12px;line-height:1.5"><strong style="color:#C1694F">${h.i} ${h.l}</strong> — ${h.pct}% dos dias.<br>${h.m}</div></div>`).join(""):`<div class="imp-item"><span style="font-size:16px">✅</span><div style="font-size:12px">Nenhum hábito de alto impacto muito negligenciado!</div></div>`;
+  const focos=[...altR,...mel.filter(h=>h.imp==="B")].slice(0,3);
+  const prox=focos.length?focos.map((h,i)=>`<div class="prox-item"><div class="prox-num">${i+1}</div><div style="font-size:12px;line-height:1.5"><strong>${h.i} ${h.l}</strong><br>${h.pct}% dos dias → meta: 70% na próx. semana.</div></div>`).join(""):`<div class="prox-item"><div class="prox-num">✓</div><div style="font-size:12px">Você foi muito bem! Mantenha a consistência.</div></div>`;
+  // ── PAINEL DE EMOÇÕES ──
+  const emoCount={};
+  const emoMotivos={};
+  semana.forEach(e=>{
+    if(e.emocoes) e.emocoes.forEach(id=>{
+      emoCount[id]=(emoCount[id]||0)+1;
+      if(e.motivo){if(!emoMotivos[id])emoMotivos[id]=[];emoMotivos[id].push({data:fmtD(e.date),motivo:e.motivo});}
+    });
+  });
+  const emoSorted=Object.entries(emoCount).sort((a,b)=>b[1]-a[1]);
+  let emoPainel="";
+  if(emoSorted.length){
+    emoPainel=emoSorted.map(([id,cnt])=>{
+      const em=EMOCOES.find(e=>e.id===id);if(!em)return"";
+      const motivosList=emoMotivos[id]||[];
+      const motivosHtml=motivosList.length?`<div style="margin-top:6px">${motivosList.map(m=>`<div style="font-size:11px;color:#A08070;padding:4px 0;border-top:1px solid #F0D5CC"><span style="color:#8B5E52;font-weight:700">${m.data}:</span> ${m.motivo}</div>`).join("")}</div>`:"";
+      return`<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #F0D5CC">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+          <span style="font-size:18px">${em.e}</span>
+          <span style="font-size:14px;font-weight:700;color:${em.cor}">${em.l}</span>
+          <span style="font-size:11px;background:${em.cor}22;color:${em.cor};padding:2px 8px;border-radius:10px;font-weight:700;margin-left:auto">${cnt}x na semana</span>
+        </div>
+        ${motivosHtml}
+      </div>`;
+    }).join("");
+  } else {
+    emoPainel=`<div style="font-size:13px;color:#A08070;font-style:italic;padding:8px 0">Nenhuma emoção registrada esta semana. Tente preencher na próxima! 🧡</div>`;
+  }
+
+  document.getElementById("resumoContent").innerHTML=`
+    <div class="res-hdr">
+      <div style="font-size:11px;color:#F0D5CC;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">${fmtD(last7d[0])} — ${fmtD(last7d[6])} · ${dias} dias</div>
+      <div style="font-size:46px;font-weight:600;line-height:1">${nF}</div>
+      <div style="font-size:14px;color:#F0D5CC;margin-top:2px;font-style:italic">${rot}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:3px;font-style:italic">${det}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.8);margin-top:7px">Humor médio: ${mH.toFixed(1)}/10 · Rotina: ${pG}% · ⭐ ${xpS} XP</div>
+    </div>
+    <div class="rblock"><div class="rbtitle">💜 Suas emoções esta semana</div><div style="font-size:11px;color:#A08070;margin-bottom:10px;font-style:italic">O que você sentiu e por quê:</div>${emoPainel}</div>
+    <div class="card"><div style="font-size:14px;color:#C1694F;font-weight:600;margin-bottom:10px">📊 Hábitos desta semana</div>${barras}</div>
+    <div class="rblock"><div class="rbtitle">🏆 O que você foi bem</div>${conq}</div>
+    <div class="rblock"><div class="rbtitle">⚠️ Impacto do que ficou pra trás</div><div style="font-size:11px;color:#A08070;margin-bottom:8px;font-style:italic">Hábitos de alto impacto e por que importam:</div>${imp}</div>
+    <div class="rblock"><div class="rbtitle">🎯 Foco para a próxima semana</div><div style="font-size:11px;color:#A08070;margin-bottom:8px;font-style:italic">Os 3 pontos que mais vão mover seu bem-estar:</div>${prox}</div>
+    <div class="tip">Cada semana de registro é uma semana de autoconhecimento.<br>Você está cuidando de si mesma. Isso importa muito. 🧡</div>`;
+}
+
+// ── NÍVEIS ──
+function renderNiveis(){
+  const lv=getLevel(totalXP),next=LEVELS.find(l=>l.n===lv.n+1);
+  const pct=next?Math.round((totalXP-lv.min)/(next.min-lv.min)*100):100;
+  document.getElementById("lvlAtual").innerHTML=`<div style="text-align:center">
+    <div style="font-size:46px;margin-bottom:7px">${lv.icon}</div>
+    <div style="font-size:19px;font-weight:700;color:#C1694F;margin-bottom:3px">${lv.name}</div>
+    <div style="font-size:12px;color:#A08070;margin-bottom:10px;font-style:italic">${lv.msg}</div>
+    <div style="font-size:22px;font-weight:700">${totalXP} XP</div>
+    ${next?`<div style="font-size:11px;color:#A08070;margin:4px 0 9px">Faltam ${next.min-totalXP} XP para ${next.icon} ${next.name}</div><div class="pbarW"><div class="pbar" style="width:${pct}%"></div></div>`:`<div style="font-size:12px;color:#5A9B6B;margin-top:7px;font-weight:700">Nível máximo! 🌺</div>`}
+  </div>`;
+  document.getElementById("lvlGrid").innerHTML=LEVELS.map(l=>{
+    const ok=totalXP>=l.min,cur=l.n===lv.n;
+    return`<div class="lv-card ${cur?"cur":""} ${!ok?"locked":""}">
+      <div style="font-size:26px;margin-bottom:5px">${l.icon}</div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:2px">${l.name}</div>
+      <div style="font-size:10px;color:#A08070">${l.min}+ XP</div>
+      ${cur?`<div style="font-size:10px;background:#C1694F;color:#fff;border-radius:7px;padding:2px 7px;margin-top:4px;display:inline-block">Você está aqui</div>`:""}
+      ${ok&&!cur?`<div style="font-size:10px;color:#5A9B6B;margin-top:4px;font-weight:700">✓ Conquistado</div>`:""}
+    </div>`;
+  }).join("");
+}
+
+// ── RECOMPENSAS ──
+function mesPct(){
+  const n=new Date(),y=n.getFullYear(),m=n.getMonth(),dp=n.getDate(),dim=new Date(y,m+1,0).getDate();
+  let tot=0,feito=0;
+  for(let d=1;d<=dp;d++){
+    const ds=`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const e=allData[ds];
+    const active=e?.noClass?ITEMS.filter(i=>i.id!=="nosc"):ITEMS;
+    tot+=active.length;
+    if(e?.chk)feito+=active.filter(i=>e.chk[i.id]).length;
+  }
+  const pct=tot>0?Math.round(feito/tot*100):0;
+  const reg=Object.keys(allData).filter(k=>k.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).length;
+  const MS=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  return{pct,dp,dim,reg,mes:MS[m]};
+}
+async function saveRc(){ls.setArr("rc",recompensas);await sto.set("recompensas",JSON.stringify(recompensas));}
+function addRc(){
+  const emoji=document.getElementById("rcEmoji").value.trim()||"🎁";
+  const nome=document.getElementById("rcNome").value.trim();
+  const cat=document.getElementById("rcCat").value;
+  const meta=parseInt(document.getElementById("rcMeta").value)||80;
+  if(!nome){document.getElementById("rcNome").focus();return;}
+  recompensas.push({id:Date.now(),emoji,nome,cat,meta});
+  saveRc();
+  document.getElementById("rcNome").value="";
+  document.getElementById("rcEmoji").value="";
+  document.getElementById("rcMeta").value="";
+  renderRecomp();
+}
+function delRc(id){recompensas=recompensas.filter(r=>r.id!==id);saveRc();renderRecomp();}
+const CATLBL={comprar:"🛍️ Comprar",fazer:"🌟 Fazer","experiência":"✨ Experiência",cuidado:"💆 Autocuidado"};
+function sorteioKey(){const n=new Date();return`sk:${n.getFullYear()}-${n.getMonth()+1}`;}
+function renderRecomp(){
+  const {pct,dp,dim,reg,mes}=mesPct();
+  document.getElementById("mesPct").textContent=pct+"%";
+  document.getElementById("mesSub").textContent=`de hábitos cumpridos em ${mes}`;
+  document.getElementById("mesBar").style.width=pct+"%";
+  document.getElementById("mesDias").textContent=`${reg} dias registrados de ${dp} passados (mês tem ${dim} dias)`;
+  const area=document.getElementById("sorteioArea");
+  if(pct>=80&&recompensas.length){
+    area.style.display="block";
+    const j=localStorage.getItem(sorteioKey());
+    document.getElementById("sorteioJaFeito").textContent=j?`✓ Este mês você sorteou: ${JSON.parse(j).emoji} ${JSON.parse(j).nome}`:"";
+  } else area.style.display="none";
+  const sorted=[...recompensas].sort((a,b)=>{const ao=pct>=a.meta,bo=pct>=b.meta;if(ao&&!bo)return-1;if(!ao&&bo)return 1;return a.meta-b.meta;});
+  document.getElementById("rcLista").innerHTML=sorted.length?sorted.map(r=>{
+    const ok=pct>=r.meta,falta=Math.max(0,r.meta-pct);
+    return`<div class="rc-card ${ok?"ok":"lock"}" ${ok?`onclick="celebrar('${r.emoji}','${r.nome.replace(/'/g,"\\'")}')"`:""}>
+      <span style="font-size:26px;flex-shrink:0">${r.emoji}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:700;color:${ok?"#2A6B3C":"#2C2C2C"};margin-bottom:2px">${r.nome}</div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#A08070;margin-bottom:4px">${CATLBL[r.cat]||r.cat}</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:11px;font-weight:700;color:#C1694F;background:#F0D5CC;padding:2px 8px;border-radius:8px">Meta: ${r.meta}%</span>
+          ${ok?`<span style="font-size:11px;background:#5A9B6B;color:#fff;padding:2px 8px;border-radius:8px;font-weight:700">✓ Desbloqueada!</span>`:`<span style="font-size:11px;color:#A08070">Faltam ${falta}% 🔒</span>`}
+        </div>
+      </div>
+      <button class="rc-del" onclick="event.stopPropagation();delRc(${r.id})">✕</button>
+    </div>`;
+  }).join(""):`<div class="empty" style="margin-bottom:14px">Nenhuma recompensa ainda.<br>Adicione algo que você merece! 🧡</div>`;
+}
+function iniciarSorteio(){
+  if(!recompensas.length)return;
+  mostrarSorteio(recompensas[Math.floor(Math.random()*recompensas.length)]);
+}
+function sortearNovamente(){if(!recompensas.length)return;mostrarSorteio(recompensas[Math.floor(Math.random()*recompensas.length)],true);}
+function mostrarSorteio(r,skip=false){
+  document.getElementById("sorteioEmoji").textContent=r.emoji;
+  document.getElementById("sorteioNome").textContent=r.nome;
+  openModal("sorteioModal");
+  if(!skip)confetes();
+  const d={nome:r.nome,emoji:r.emoji};localStorage.setItem(sorteioKey(),JSON.stringify(d));sto.set(sorteioKey(),JSON.stringify(d));
+}
+function celebrar(e,n){mostrarSorteio({emoji:e,nome:n});}
+function confetes(){
+  const w=document.createElement("div");w.className="cf-wrap";document.body.appendChild(w);
+  const cs=["#C1694F","#F0D5CC","#8B5E52","#5A9B6B","#FAF3E0","#CC7755","#F0A080"];
+  for(let i=0;i<60;i++){
+    const c=document.createElement("div");c.className="cf";
+    const sz=Math.random()*8+5;
+    c.style.cssText=`width:${sz}px;height:${sz}px;background:${cs[Math.floor(Math.random()*cs.length)]};left:${Math.random()*100}%;animation-duration:${Math.random()*2+1.5}s;animation-delay:${Math.random()*.8}s;border-radius:${Math.random()>.5?"50%":"2px"}`;
+    w.appendChild(c);
+  }
+  setTimeout(()=>w.remove(),4500);
+}
+
+// ── MODALS ──
+function openModal(id){document.getElementById(id).classList.add("show");}
+function closeModal(id){document.getElementById(id).classList.remove("show");}
+
+// ── TOAST ──
+function showToast(id,msg,cls){
+  const t=document.getElementById(id);
+  t.textContent=msg;t.className="toast "+cls;t.style.display="block";
+  setTimeout(()=>{t.style.display="none"},3500);
+}
+
+// ── EDITAR ROTINA ──
+async function saveITEMS(){
+  ls.setArr("rotina_items",ITEMS);
+  await sto.set("rotina_items",JSON.stringify(ITEMS));
+}
+
+function toggleEditRot(){
+  editRotMode=!editRotMode;
+  if(!editRotMode) editingId=null; // cancel any open edit when closing
+  const btn=document.getElementById("editRotBtn");
+  const form=document.getElementById("rotAddForm");
+  btn.textContent=editRotMode?"✅ Concluir":"✏️ Editar";
+  btn.style.background=editRotMode?"#5A9B6B":"none";
+  btn.style.color=editRotMode?"#fff":"#C1694F";
+  btn.style.borderColor=editRotMode?"#5A9B6B":"#C1694F";
+  form.style.display=editRotMode?"block":"none";
+  renderRotHabitos();
+}
+
+let editingId=null; // which habit is currently being edited inline
+
+function renderRotHabitos(){
+  const grupos=["manhã","comida","noite"];
+  const glabels={"manhã":"🌅 Manhã","comida":"🍽️ Alimentação","noite":"🌙 Noite"};
+  let h="";
+  grupos.forEach(g=>{
+    const its=ITEMS.filter(i=>i.g===g);
+    if(!its.length)return;
+    h+=`<div style="font-size:11px;color:#A08070;text-transform:uppercase;letter-spacing:1px;margin:10px 0 6px;font-weight:700">${glabels[g]}</div>`;
+    its.forEach(it=>{
+      if(editRotMode && editingId===it.id){
+        // INLINE EDIT FORM
+        h+=`<div style="background:#FAF3E0;border:1.5px solid #C1694F;border-radius:12px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;gap:7px;margin-bottom:8px">
+            <input id="ei_emoji" value="${it.i}" maxlength="2" style="width:46px;text-align:center;font-size:17px;border:1.5px solid #F0D5CC;border-radius:9px;padding:6px;outline:none;background:#fff;font-family:Georgia,serif;flex-shrink:0">
+            <input id="ei_nome" value="${it.l.replace(/"/g,'&quot;')}" style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:7px 10px;font-family:Georgia,serif;font-size:13px;outline:none;background:#fff">
+          </div>
+          <div style="display:flex;gap:7px;margin-bottom:10px">
+            <select id="ei_grupo" style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:7px;font-family:Georgia,serif;font-size:12px;outline:none;background:#fff">
+              <option value="manhã" ${it.g==="manhã"?"selected":""}>🌅 Manhã</option>
+              <option value="comida" ${it.g==="comida"?"selected":""}>🍽️ Alimentação</option>
+              <option value="noite" ${it.g==="noite"?"selected":""}>🌙 Noite</option>
+            </select>
+            <select id="ei_imp" style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:7px;font-family:Georgia,serif;font-size:12px;outline:none;background:#fff">
+              <option value="A" ${it.imp==="A"?"selected":""}>Alto (20 XP)</option>
+              <option value="B" ${it.imp==="B"?"selected":""}>Médio (10 XP)</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:7px">
+            <button onclick="saveHabito('${it.id}')" style="flex:1;padding:9px;background:#C1694F;color:#fff;border:none;border-radius:9px;font-family:Georgia,serif;font-size:12px;font-weight:700;cursor:pointer">✓ Salvar</button>
+            <button onclick="cancelEdit()" style="flex:1;padding:9px;background:#F0D5CC;color:#8B5E52;border:none;border-radius:9px;font-family:Georgia,serif;font-size:12px;font-weight:700;cursor:pointer">Cancelar</button>
+          </div>
+        </div>`;
+      } else {
+        // NORMAL ROW
+        h+=`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F0D5CC">
+          <span style="font-size:16px">${it.i}</span>
+          <span style="font-size:13px;flex:1;color:#2C2C2C">${it.l}</span>
+          <span style="font-size:10px;color:#A08070;background:#F0D5CC;padding:2px 7px;border-radius:8px">${it.xp}XP</span>
+          ${editRotMode?`
+            <button onclick="startEdit('${it.id}')" style="background:none;border:1.5px solid #F0D5CC;border-radius:7px;padding:3px 8px;font-size:11px;cursor:pointer;color:#8B5E52">✏️</button>
+            <button onclick="delHabito('${it.id}')" style="background:none;border:none;font-size:16px;cursor:pointer;color:#D4A89A;padding:2px 4px">✕</button>
+          `:""}
+        </div>`;
+      }
+    });
+  });
+  if(!ITEMS.length) h=`<div style="font-size:13px;color:#A08070;font-style:italic;padding:8px 0">Nenhum hábito cadastrado. Adicione um abaixo! 🌱</div>`;
+  document.getElementById("rotHabitos").innerHTML=h;
+}
+
+function startEdit(id){
+  editingId=id;
+  renderRotHabitos();
+  // scroll to the editing form
+  setTimeout(()=>{
+    const el=document.getElementById("ei_nome");
+    if(el){el.focus();el.select();}
+  },50);
+}
+
+function cancelEdit(){
+  editingId=null;
+  renderRotHabitos();
+}
+
+async function saveHabito(id){
+  const emoji=document.getElementById("ei_emoji").value.trim()||"🌟";
+  const nome=document.getElementById("ei_nome").value.trim();
+  const grupo=document.getElementById("ei_grupo").value;
+  const imp=document.getElementById("ei_imp").value;
+  if(!nome)return;
+  const xp=imp==="A"?20:10;
+  const idx=ITEMS.findIndex(i=>i.id===id);
+  if(idx>-1){
+    ITEMS[idx]={...ITEMS[idx],i:emoji,l:nome,g:grupo,imp,xp};
+  }
+  editingId=null;
+  await saveITEMS();
+  renderRotHabitos();
+  buildChecklist();
+  showToast("toast","✓ Hábito atualizado!","ok");
+}
+
+async function delHabito(id){
+  if(!confirm("Excluir este hábito do checklist diário?"))return;
+  ITEMS=ITEMS.filter(i=>i.id!==id);
+  editingId=null;
+  await saveITEMS();
+  renderRotHabitos();
+  buildChecklist();
+}
+
+async function addHabito(){
+  const emoji=document.getElementById("rotEmoji").value.trim()||"🌟";
+  const nome=document.getElementById("rotNome").value.trim();
+  const grupo=document.getElementById("rotGrupo").value;
+  const imp=document.getElementById("rotImp").value;
+  if(!nome){document.getElementById("rotNome").focus();return;}
+  const xp=imp==="A"?20:10;
+  const newItem={id:"custom_"+Date.now(),l:nome,i:emoji,g:grupo,imp,xp,m:"Hábito personalizado."};
+  ITEMS.push(newItem);
+  await saveITEMS();
+  document.getElementById("rotNome").value="";
+  document.getElementById("rotEmoji").value="";
+  renderRotHabitos();
+  buildChecklist();
+  showToast("toast","✓ Hábito adicionado!","ok");
+}
+
+// ── SAÚDE ──
+let saudeItems=[], saudeFiltro="todos";
+
+async function loadSaude(){
+  const r=await sto.get("saude");
+  if(r){try{saudeItems=JSON.parse(r.value)}catch{}}
+  if(!saudeItems.length) saudeItems=ls.getArr("saude");
+}
+
+async function saveSaude(){
+  ls.setArr("saude",saudeItems);
+  await sto.set("saude",JSON.stringify(saudeItems));
+}
+
+const SAUDE_CAT={
+  consulta:{icon:"🧑‍⚕️",label:"Consulta"},
+  exame:{icon:"🔬",label:"Exame"},
+  medicamento:{icon:"💊",label:"Medicamento"},
+  retorno:{icon:"🔄",label:"Retorno"},
+  outro:{icon:"📋",label:"Outro"}
+};
+
+async function addSaude(){
+  const nome=document.getElementById("saude_nome").value.trim();
+  if(!nome){document.getElementById("saude_nome").focus();return;}
+  const item={
+    id:"s_"+Date.now(),
+    nome,
+    cat:document.getElementById("saude_cat").value,
+    data:document.getElementById("saude_data").value||"",
+    obs:document.getElementById("saude_obs").value.trim(),
+    status:"pendente",
+    criado:todayStr()
+  };
+  saudeItems.unshift(item);
+  await saveSaude();
+  document.getElementById("saude_nome").value="";
+  document.getElementById("saude_data").value="";
+  document.getElementById("saude_obs").value="";
+  renderSaude();
+}
+
+async function toggleSaudeStatus(id){
+  const it=saudeItems.find(i=>i.id===id);
+  if(!it)return;
+  const cycle={pendente:"agendado",agendado:"feito",feito:"pendente"};
+  it.status=cycle[it.status]||"pendente";
+  await saveSaude();
+  renderSaude();
+}
+
+async function delSaude(id){
+  saudeItems=saudeItems.filter(i=>i.id!==id);
+  await saveSaude();
+  renderSaude();
+}
+
+function setSaudeFiltro(f){
+  saudeFiltro=f;
+  document.querySelectorAll(".sf-btn").forEach(b=>b.classList.remove("sf-on"));
+  document.getElementById("sf_"+f)?.classList.add("sf-on");
+  renderSaude();
+}
+
+function fmtDataSaude(ds){
+  if(!ds)return"";
+  const[y,m,d]=ds.split("-");
+  const ms=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+  return`${parseInt(d)} de ${ms[parseInt(m)-1]}`;
+}
+
+function renderSaude(){
+  const STATUS={
+    pendente:{icon:"⏳",label:"Pendente",cor:"#CC8B3A"},
+    agendado:{icon:"📅",label:"Agendado",cor:"#5A6B9B"},
+    feito:{icon:"✅",label:"Feito",cor:"#5A9B6B"}
+  };
+  const filtered=saudeFiltro==="todos"?saudeItems:saudeItems.filter(i=>i.status===saudeFiltro);
+
+  if(!filtered.length){
+    const msgs={todos:"Nenhum item ainda. Adicione uma consulta ou exame! 🩺",pendente:"Nenhum item pendente. 🎉",agendado:"Nenhum item agendado ainda.",feito:"Nenhum item concluído ainda."};
+    document.getElementById("saudeLista").innerHTML=`<div class="empty">${msgs[saudeFiltro]}</div>`;
+    return;
+  }
+
+  // Group by status order: pendente → agendado → feito
+  const order=["pendente","agendado","feito"];
+  const toShow=saudeFiltro==="todos"?[...filtered].sort((a,b)=>order.indexOf(a.status)-order.indexOf(b.status)):filtered;
+
+  document.getElementById("saudeLista").innerHTML=toShow.map(it=>{
+    const cat=SAUDE_CAT[it.cat]||SAUDE_CAT.outro;
+    const st=STATUS[it.status]||STATUS.pendente;
+    const checkContent=it.status==="feito"?"✓":it.status==="agendado"?"📅":"";
+    return`<div class="saude-item ${it.status}">
+      <div class="saude-check" onclick="toggleSaudeStatus('${it.id}')" title="Clique para mudar status">${checkContent}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px;flex-wrap:wrap">
+          <span style="font-size:14px;font-weight:700;color:#2C2C2C">${it.nome}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span style="font-size:10px;color:#8B5E52">${cat.icon} ${cat.label}</span>
+          ${it.data?`<span style="font-size:10px;color:#A08070">· ${fmtDataSaude(it.data)}</span>`:""}
+          <span style="font-size:10px;font-weight:700;color:${st.cor}">${st.icon} ${st.label}</span>
+        </div>
+        ${it.obs?`<div style="font-size:12px;color:#A08070;margin-top:4px;font-style:italic">${it.obs}</div>`:""}
+      </div>
+      <button onclick="delSaude('${it.id}')" style="background:none;border:none;font-size:16px;cursor:pointer;color:#D4A89A;padding:2px;flex-shrink:0">✕</button>
+    </div>`;
+  }).join("");
+}
+
+// ── REGISTRO DE PENSAMENTOS ──
+let pensamentos=[];
+
+async function loadPensamentos(){
+  const r=await sto.get("pensamentos");
+  if(r){try{pensamentos=JSON.parse(r.value)}catch{}}
+  if(!pensamentos.length) pensamentos=ls.getArr("pensamentos");
+}
+
+async function savePensamentos(){
+  ls.setArr("pensamentos",pensamentos);
+  await sto.set("pensamentos",JSON.stringify(pensamentos));
+}
+
+function abrirNovoPensamento(){
+  // clear form
+  ["p_situacao","p_emocao","p_pensamento","p_favor","p_contra","p_alternativo"].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value="";
+  });
+  ["p_intensidade_antes","p_intensidade_depois","p_crenca"].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value="";
+  });
+  document.getElementById("pToast").style.display="none";
+  document.getElementById("pensamentoModal").classList.add("show");
+  document.getElementById("pensamentoModal").scrollTop=0;
+}
+
+function closePensamento(){
+  document.getElementById("pensamentoModal").classList.remove("show");
+}
+
+async function salvarPensamento(){
+  const situacao=document.getElementById("p_situacao").value.trim();
+  const pensamento=document.getElementById("p_pensamento").value.trim();
+  if(!situacao||!pensamento){
+    showToast("pToast","Preencha pelo menos a situação e o pensamento automático.","err");
+    return;
+  }
+  const reg={
+    id:"p_"+Date.now(),
+    date:todayStr(),
+    situacao,
+    emocao:document.getElementById("p_emocao").value.trim(),
+    intensidade_antes:parseInt(document.getElementById("p_intensidade_antes").value)||null,
+    pensamento,
+    crenca:parseInt(document.getElementById("p_crenca").value)||null,
+    favor:document.getElementById("p_favor").value.trim(),
+    contra:document.getElementById("p_contra").value.trim(),
+    alternativo:document.getElementById("p_alternativo").value.trim(),
+    intensidade_depois:parseInt(document.getElementById("p_intensidade_depois").value)||null,
+  };
+  pensamentos.unshift(reg);
+  await savePensamentos();
+  showToast("pToast","✓ Registro salvo! 🧠","ok");
+  setTimeout(()=>{closePensamento();renderPensamentos();},1600);
+}
+
+function renderPensamentos(){
+  if(!pensamentos.length){
+    document.getElementById("pensamentosLista").innerHTML=`<div class="empty">Nenhum registro ainda.<br>Toque em "Novo registro" quando sentir uma emoção intensa. 🧠</div>`;
+    return;
+  }
+  document.getElementById("pensamentosLista").innerHTML=pensamentos.map(p=>{
+    const antes=p.intensidade_antes,depois=p.intensidade_depois;
+    const reducao=antes&&depois?depois-antes:null;
+    const redLabel=reducao!==null?(reducao<0?`↓ ${Math.abs(reducao)}% de alívio`:`↑ ${reducao}% (continua processando`):``;
+    const redCls=reducao!==null&&reducao<0?"p-reducao":"p-reducao pior";
+    return`<div class="p-card">
+      <div class="p-card-header">
+        <div>
+          <div style="font-size:11px;color:#A08070;margin-bottom:3px">${fmtD(p.date)}</div>
+          ${p.emocao?`<div style="font-size:13px;font-weight:700;color:#C1694F">${p.emocao}${p.intensidade_antes?` (${p.intensidade_antes}%)`:""}</div>`:""}
+        </div>
+        ${reducao!==null?`<span class="${redCls}">${redLabel}</span>`:""}
+      </div>
+      <div style="font-size:12px;color:#8B5E52;font-weight:700;margin-bottom:3px">Situação</div>
+      <div style="font-size:13px;color:#2C2C2C;margin-bottom:8px">${p.situacao}</div>
+      <div style="font-size:12px;color:#8B5E52;font-weight:700;margin-bottom:3px">Pensamento automático ${p.crenca?`(${p.crenca}% de crença)`:""}</div>
+      <div style="font-size:13px;color:#2C2C2C;font-style:italic;margin-bottom:8px">"${p.pensamento}"</div>
+      ${p.alternativo?`<div style="background:#F0D5CC;border-radius:9px;padding:9px 11px">
+        <div style="font-size:11px;color:#8B5E52;font-weight:700;margin-bottom:3px">💜 Pensamento alternativo</div>
+        <div style="font-size:12px;color:#2C2C2C">${p.alternativo}</div>
+      </div>`:""}
+      <button onclick="deletarPensamento('${p.id}')" style="background:none;border:none;font-size:11px;color:#D4A89A;cursor:pointer;margin-top:8px;padding:0">excluir registro</button>
+    </div>`;
+  }).join("");
+}
+
+async function deletarPensamento(id){
+  if(!confirm("Excluir este registro?"))return;
+  pensamentos=pensamentos.filter(p=>p.id!==id);
+  await savePensamentos();
+  renderPensamentos();
+}
+
+init();
+</script>
+</body>
+</html>

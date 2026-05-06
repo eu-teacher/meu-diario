@@ -1,0 +1,10 @@
+{
+  "name": "meu-diario",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "serve . --listen $PORT"
+  },
+  "dependencies": {
+    "serve": "^14.2.1"
+  }
+}
