@@ -457,10 +457,32 @@ textarea:focus{border-color:#C1694F}
 
   <!-- RESUMO -->
   <div class="page" id="pg-resumo">
-    <div class="stitle">Resumo Semanal</div>
-    <div class="ssub">Análise dos seus últimos 7 dias</div>
-    <button class="btn" style="margin-bottom:14px" onclick="gerarResumo()">🔄 Gerar resumo</button>
-    <div id="resumoContent"></div>
+    <div class="stitle">Relatórios</div>
+    <div class="ssub">Análise do seu bem-estar ao longo do tempo</div>
+
+    <!-- SUB TABS -->
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button onclick="setResumoTab('semana',this)" id="rt_semana" class="sf-btn sf-on">📊 Semana</button>
+      <button onclick="setResumoTab('mes',this)" id="rt_mes" class="sf-btn">📅 Mês</button>
+      <button onclick="setResumoTab('historico',this)" id="rt_historico" class="sf-btn">📚 Histórico</button>
+    </div>
+
+    <!-- SEMANAL -->
+    <div id="rt-semana">
+      <button class="btn" style="margin-bottom:14px" onclick="gerarEsalvar()">🔄 Gerar e salvar resumo desta semana</button>
+      <div id="resumoContent"></div>
+    </div>
+
+    <!-- MENSAL -->
+    <div id="rt-mes" style="display:none">
+      <button class="btn" style="margin-bottom:14px" onclick="gerarResumoMensal()">🔄 Gerar resumo deste mês</button>
+      <div id="resumoMensalContent"></div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div id="rt-historico" style="display:none">
+      <div id="historicoContent"></div>
+    </div>
   </div>
 
   <!-- RECOMPENSAS -->
@@ -734,49 +756,103 @@ let dmDate="", dmChk={}, dmSemAula=false, dmEmos=[];
 let calY=new Date().getFullYear(), calM=new Date().getMonth();
 
 // ── STORAGE ──
-const sto={
-  get:k=>new Promise(r=>{const t=setTimeout(()=>r(null),3000);try{window.storage.get(k).then(v=>{clearTimeout(t);r(v)}).catch(()=>{clearTimeout(t);r(null)})}catch{clearTimeout(t);r(null)}}),
-  set:(k,v)=>new Promise(r=>{const t=setTimeout(()=>r(false),3000);try{window.storage.set(k,v).then(()=>{clearTimeout(t);r(true)}).catch(()=>{clearTimeout(t);r(false)})}catch{clearTimeout(t);r(false)}}),
-  list:p=>new Promise(r=>{const t=setTimeout(()=>r(null),3000);try{window.storage.list(p).then(v=>{clearTimeout(t);r(v?.keys||[])}).catch(()=>{clearTimeout(t);r(null)})}catch{clearTimeout(t);r(null)}}),
+// ── SUPABASE ──
+const SB_URL = "https://yevzrkpmuwhydvuurbds.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlldnpya3BtdXdoeWR2dXVyYmRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMDM2MjIsImV4cCI6MjA5MzY3OTYyMn0.d5_2tTTop9gbKefTjBl-2mqCbtb6PjXxOYoIA8oJuK0";
+
+const sb = {
+  async get(chave) {
+    try {
+      const r = await fetch(`${SB_URL}/rest/v1/registros?chave=eq.${encodeURIComponent(chave)}&select=valor`, {
+        headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }
+      });
+      const data = await r.json();
+      return data?.[0]?.valor || null;
+    } catch { return null; }
+  },
+  async set(chave, valor) {
+    try {
+      await fetch(`${SB_URL}/rest/v1/registros`, {
+        method: "POST",
+        headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates" },
+        body: JSON.stringify({ chave, valor, atualizado_em: new Date().toISOString() })
+      });
+      return true;
+    } catch { return false; }
+  },
+  async getAll(prefix) {
+    try {
+      const r = await fetch(`${SB_URL}/rest/v1/registros?chave=like.${encodeURIComponent(prefix + "%")}&select=chave,valor`, {
+        headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }
+      });
+      return await r.json();
+    } catch { return []; }
+  },
+  async del(chave) {
+    try {
+      await fetch(`${SB_URL}/rest/v1/registros?chave=eq.${encodeURIComponent(chave)}`, {
+        method: "DELETE",
+        headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }
+      });
+    } catch {}
+  }
 };
-const ls={
-  get:()=>{try{return JSON.parse(localStorage.getItem("td")||"{}")}catch{return{}}},
-  set:d=>{try{localStorage.setItem("td",JSON.stringify(d))}catch{}},
-  getArr:k=>{try{return JSON.parse(localStorage.getItem(k)||"[]")}catch{return[]}},
-  setArr:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}},
+
+const ls = {
+  get: () => { try { return JSON.parse(localStorage.getItem("td") || "{}") } catch { return {} } },
+  set: d => { try { localStorage.setItem("td", JSON.stringify(d)) } catch {} },
+  getArr: k => { try { return JSON.parse(localStorage.getItem(k) || "[]") } catch { return [] } },
+  setArr: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch {} },
 };
 
 // ── INIT ──
-async function init(){
-  setStatus("🔄 Carregando...");
-  const keys=await sto.list("d:");
-  if(keys!==null){
-    useCloud=true;
-    const entries={};
-    for(const k of keys){const r=await sto.get(k);if(r){try{const e=JSON.parse(r.value);entries[e.date]=e}catch{}}}
-    allData={...ls.get(),...entries};
-    for(const[date,e] of Object.entries(allData)) await sto.set("d:"+date,JSON.stringify(e));
-    ls.set(allData);
-    setStatus("☁️ Dados salvos na nuvem");
-  } else {
-    allData=ls.get();
+async function init() {
+  setStatus("🔄 Conectando ao Supabase...");
+  try {
+    // Load all daily entries
+    const rows = await sb.getAll("d:");
+    if (rows.length > 0) {
+      rows.forEach(row => {
+        try { const e = JSON.parse(row.valor); allData[e.date] = e; } catch {}
+      });
+      // Merge with localStorage
+      allData = { ...ls.get(), ...allData };
+      ls.set(allData);
+      useCloud = true;
+      setStatus("☁️ Sincronizado");
+    } else {
+      // No cloud data — try localStorage
+      allData = ls.get();
+      // Push localStorage to cloud
+      for (const [date, e] of Object.entries(allData)) {
+        await sb.set("d:" + date, JSON.stringify(e));
+      }
+      useCloud = true;
+      setStatus("☁️ Sincronizado");
+    }
+  } catch {
+    allData = ls.get();
     setStatus("💾 Salvo localmente");
   }
-  const rv=await sto.get("recompensas");
-  if(rv){try{recompensas=JSON.parse(rv.value)}catch{}}
-  if(!recompensas.length) recompensas=ls.getArr("rc");
-  // Load custom routine
-  const ri=await sto.get("rotina_items");
-  if(ri){try{ITEMS=JSON.parse(ri.value)}catch{}}
-  else{const li=ls.getArr("rotina_items");if(li.length)ITEMS=li;}
+
+  // Load other data from Supabase
+  const rv = await sb.get("recompensas");
+  if (rv) { try { recompensas = JSON.parse(rv) } catch {} }
+  if (!recompensas.length) recompensas = ls.getArr("rc");
+
+  const ri = await sb.get("rotina_items");
+  if (ri) { try { ITEMS = JSON.parse(ri) } catch {} }
+  else { const li = ls.getArr("rotina_items"); if (li.length) ITEMS = li; }
+
   await loadPensamentos();
   await loadSaude();
+  await loadRelatorios();
   calcXP(); loadToday();
-  // date label
-  const n=new Date();
-  const ds=["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"];
-  const ms=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
-  document.getElementById("todayLbl").textContent=`${ds[n.getDay()]}, ${n.getDate()} de ${ms[n.getMonth()]}`;
+
+  const n = new Date();
+  const ds = ["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"];
+  const ms = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+  document.getElementById("todayLbl").textContent = `${ds[n.getDay()]}, ${n.getDate()} de ${ms[n.getMonth()]}`;
 }
 
 function setStatus(m){const s=document.getElementById("syncStatus");if(s)s.textContent=m;}
@@ -1023,7 +1099,8 @@ async function saveToday(){
   const entry={date:td,mood,emocoes:[...selectedEmos],motivo,chk:{...chk},note,noClass:semAula,saved:new Date().toISOString()};
   allData[td]=entry;ls.set(allData);
   clearDraft(); // draft confirmed, clear it
-  let ok=true;if(useCloud)ok=await sto.set("d:"+td,JSON.stringify(entry));
+  let ok=true;
+  ok=await sb.set("d:"+td,JSON.stringify(entry));
   const activeItems=semAula?ITEMS.filter(i=>i.id!=="nosc"):ITEMS;
   const allDone=activeItems.every(i=>chk[i.id]);
   const xpE=activeItems.reduce((s,i)=>chk[i.id]?s+i.xp:s,0)+(allDone?30:0);
@@ -1116,7 +1193,7 @@ async function saveDay(){
   const motivo=document.getElementById("dmMotivo").value;
   const entry={date:dmDate,mood,emocoes:[...dmEmos],motivo,chk:{...dmChk},note,noClass:dmSemAula,saved:new Date().toISOString()};
   allData[dmDate]=entry;ls.set(allData);
-  if(useCloud)await sto.set("d:"+dmDate,JSON.stringify(entry));
+  await sb.set("d:"+dmDate,JSON.stringify(entry));
   prevLvl=getLevel(totalXP).n;calcXP();renderCal();
   showToast("dmToast","✓ Salvo! ⭐","ok");
   setTimeout(closeDay,1600);
@@ -1149,6 +1226,303 @@ function renderHist(){
 }
 
 // ── RESUMO ──
+// ── RELATÓRIOS ──
+let relatorios = [], resumoTabAtual = 'semana';
+
+async function loadRelatorios() {
+  const r = await sb.get("relatorios");
+  if (r) { try { relatorios = JSON.parse(r) } catch {} }
+  if (!relatorios.length) relatorios = ls.getArr("relatorios");
+}
+
+async function saveRelatorios() {
+  ls.setArr("relatorios", relatorios);
+  await sb.set("relatorios", JSON.stringify(relatorios));
+}
+
+function setResumoTab(tab, el) {
+  resumoTabAtual = tab;
+  document.querySelectorAll("#rt_semana,#rt_mes,#rt_historico").forEach(b => b.classList.remove("sf-on"));
+  el.classList.add("sf-on");
+  document.getElementById("rt-semana").style.display = tab === "semana" ? "block" : "none";
+  document.getElementById("rt-mes").style.display = tab === "mes" ? "block" : "none";
+  document.getElementById("rt-historico").style.display = tab === "historico" ? "block" : "none";
+  if (tab === "historico") renderHistoricoRelatorios();
+}
+
+async function gerarEsalvar() {
+  gerarResumo(); // generate and display
+  // Save after a tick so content is ready
+  setTimeout(async () => {
+    const content = document.getElementById("resumoContent").innerHTML;
+    if (!content || content.includes("Sem registros")) return;
+    const last7d = Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-i);return d.toISOString().split("T")[0];}).reverse();
+    const rel = {
+      id: "rel_" + Date.now(),
+      tipo: "semanal",
+      periodo: `${fmtD(last7d[0])} — ${fmtD(last7d[6])}`,
+      dataInicio: last7d[0],
+      dataFim: last7d[6],
+      html: content,
+      salvo: new Date().toISOString()
+    };
+    // Don't duplicate same week
+    relatorios = relatorios.filter(r => r.dataInicio !== rel.dataInicio);
+    relatorios.unshift(rel);
+    await saveRelatorios();
+    showToast("toast", "✓ Relatório salvo no histórico!", "ok");
+  }, 100);
+}
+
+function renderHistoricoRelatorios() {
+  const el = document.getElementById("historicoContent");
+  if (!relatorios.length) {
+    el.innerHTML = `<div class="empty">Nenhum relatório salvo ainda.<br>Gere um resumo semanal ou mensal e ele aparecerá aqui. 🧡</div>`;
+    return;
+  }
+
+  // Group by type
+  const semanais = relatorios.filter(r => r.tipo === "semanal");
+  const mensais = relatorios.filter(r => r.tipo === "mensal");
+
+  let h = "";
+
+  if (semanais.length >= 2) {
+    h += `<div class="rbtitle" style="margin-bottom:10px">🔀 Comparar semanas</div>`;
+    h += `<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <select id="cmpA" class="add-sel" style="flex:1">
+        ${semanais.map(r=>`<option value="${r.id}">${r.periodo}</option>`).join("")}
+      </select>
+      <select id="cmpB" class="add-sel" style="flex:1">
+        ${semanais.map((r,i)=>`<option value="${r.id}" ${i===1?"selected":""}>${r.periodo}</option>`).join("")}
+      </select>
+    </div>
+    <button onclick="compararSemanas()" class="btn" style="margin-bottom:20px">Comparar estas semanas</button>
+    <div id="comparacaoContent"></div>`;
+  }
+
+  if (semanais.length) {
+    h += `<div class="rbtitle" style="margin-bottom:10px">📊 Relatórios semanais (${semanais.length})</div>`;
+    semanais.forEach(r => {
+      h += `<div style="background:#fff;border-radius:13px;padding:14px;margin-bottom:10px;box-shadow:0 1px 7px rgba(193,105,79,.08)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:700;color:#C1694F">${r.periodo}</div>
+          <button onclick="delRelatorio('${r.id}')" style="background:none;border:none;font-size:14px;cursor:pointer;color:#D4A89A">✕</button>
+        </div>
+        <button onclick="verRelatorio('${r.id}')" style="width:100%;padding:9px;background:#F0D5CC;border:none;border-radius:9px;font-family:Georgia,serif;font-size:12px;font-weight:700;cursor:pointer;color:#8B5E52">Ver relatório completo</button>
+        <div id="rel_${r.id}" style="display:none;margin-top:10px">${r.html}</div>
+      </div>`;
+    });
+  }
+
+  if (mensais.length) {
+    h += `<div class="rbtitle" style="margin:16px 0 10px">📅 Relatórios mensais (${mensais.length})</div>`;
+    mensais.forEach(r => {
+      h += `<div style="background:#fff;border-radius:13px;padding:14px;margin-bottom:10px;box-shadow:0 1px 7px rgba(193,105,79,.08)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:700;color:#C1694F">${r.periodo}</div>
+          <button onclick="delRelatorio('${r.id}')" style="background:none;border:none;font-size:14px;cursor:pointer;color:#D4A89A">✕</button>
+        </div>
+        <button onclick="verRelatorio('${r.id}')" style="width:100%;padding:9px;background:#F0D5CC;border:none;border-radius:9px;font-family:Georgia,serif;font-size:12px;font-weight:700;cursor:pointer;color:#8B5E52">Ver relatório completo</button>
+        <div id="rel_${r.id}" style="display:none;margin-top:10px">${r.html}</div>
+      </div>`;
+    });
+  }
+
+  el.innerHTML = h;
+}
+
+function verRelatorio(id) {
+  const el = document.getElementById("rel_" + id);
+  if (el) el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
+async function delRelatorio(id) {
+  if (!confirm("Excluir este relatório?")) return;
+  relatorios = relatorios.filter(r => r.id !== id);
+  await saveRelatorios();
+  renderHistoricoRelatorios();
+}
+
+function compararSemanas() {
+  const idA = document.getElementById("cmpA").value;
+  const idB = document.getElementById("cmpB").value;
+  if (idA === idB) { showToast("toast", "Selecione duas semanas diferentes.", "err"); return; }
+  const A = relatorios.find(r => r.id === idA);
+  const B = relatorios.find(r => r.id === idB);
+  if (!A || !B) return;
+
+  // Extract key metrics from stored data
+  const getMeta = (rel) => {
+    const days = [];
+    const d = new Date(rel.dataInicio);
+    while (d <= new Date(rel.dataFim)) {
+      const ds = d.toISOString().split("T")[0];
+      if (allData[ds]) days.push(allData[ds]);
+      d.setDate(d.getDate() + 1);
+    }
+    const humor = days.length ? (days.reduce((s,e)=>s+(e.mood||5),0)/days.length).toFixed(1) : "–";
+    const rotina = days.length ? Math.round(days.reduce((s,e)=>s+ITEMS.filter(i=>e.chk?.[i.id]).length,0)/(ITEMS.length*days.length)*100) : 0;
+    const emos = {};
+    days.forEach(e=>(e.emocoes||[]).forEach(id=>{emos[id]=(emos[id]||0)+1;}));
+    const topEmo = Object.entries(emos).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([id])=>EMOCOES.find(e=>e.id===id)?.e||"").join(" ");
+    return { humor, rotina, topEmo, dias: days.length };
+  };
+
+  const mA = getMeta(A), mB = getMeta(B);
+  const humorDiff = mA.humor !== "–" && mB.humor !== "–" ? (parseFloat(mA.humor) - parseFloat(mB.humor)).toFixed(1) : null;
+  const rotinaDiff = mA.rotina - mB.rotina;
+
+  document.getElementById("comparacaoContent").innerHTML = `
+    <div style="background:#fff;border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:0 2px 10px rgba(193,105,79,.1)">
+      <div style="font-size:13px;font-weight:700;color:#C1694F;margin-bottom:12px">📊 Comparação</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div style="text-align:center;background:#FAF3E0;border-radius:10px;padding:10px">
+          <div style="font-size:10px;color:#A08070;margin-bottom:4px">${A.periodo}</div>
+          <div style="font-size:22px;font-weight:700;color:#C1694F">${mA.humor}</div>
+          <div style="font-size:10px;color:#A08070">humor médio</div>
+          <div style="font-size:18px;font-weight:700;color:#8B5E52;margin-top:4px">${mA.rotina}%</div>
+          <div style="font-size:10px;color:#A08070">rotina</div>
+          <div style="font-size:14px;margin-top:4px">${mA.topEmo}</div>
+        </div>
+        <div style="text-align:center;background:#FAF3E0;border-radius:10px;padding:10px">
+          <div style="font-size:10px;color:#A08070;margin-bottom:4px">${B.periodo}</div>
+          <div style="font-size:22px;font-weight:700;color:#C1694F">${mB.humor}</div>
+          <div style="font-size:10px;color:#A08070">humor médio</div>
+          <div style="font-size:18px;font-weight:700;color:#8B5E52;margin-top:4px">${mB.rotina}%</div>
+          <div style="font-size:10px;color:#A08070">rotina</div>
+          <div style="font-size:14px;margin-top:4px">${mB.topEmo}</div>
+        </div>
+      </div>
+      ${humorDiff !== null ? `<div style="text-align:center;padding:10px;background:${parseFloat(humorDiff)>=0?"#F6FBF7":"#FFF5F5"};border-radius:10px;font-size:13px;font-weight:700;color:${parseFloat(humorDiff)>=0?"#5A9B6B":"#C1694F"}">
+        ${parseFloat(humorDiff)>=0?"📈":"📉"} Humor ${parseFloat(humorDiff)>=0?"melhorou":"piorou"} ${Math.abs(humorDiff)} pontos · Rotina ${rotinaDiff>=0?"subiu":"caiu"} ${Math.abs(rotinaDiff)}%
+      </div>`:""}
+    </div>`;
+}
+
+// ── RESUMO MENSAL ──
+async function gerarResumoMensal() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  const dim = new Date(y, m+1, 0).getDate();
+  const MS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  const mesNome = MS[m];
+
+  const dias = [];
+  for (let d = 1; d <= dim; d++) {
+    const ds = `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    if (allData[ds]) dias.push(allData[ds]);
+  }
+
+  if (!dias.length) {
+    document.getElementById("resumoMensalContent").innerHTML = `<div class="empty">Nenhum registro em ${mesNome}. Comece a registrar! 🧡</div>`;
+    return;
+  }
+
+  const mediaHumor = (dias.reduce((s,e)=>s+(e.mood||5),0)/dias.length).toFixed(1);
+  const pctRotina = Math.round(dias.reduce((s,e)=>s+ITEMS.filter(i=>e.chk?.[i.id]).length,0)/(ITEMS.length*dias.length)*100);
+  const xpTotal = dias.reduce((s,e)=>s+ITEMS.reduce((a,i)=>e.chk?.[i.id]?a+i.xp:a,0)+(ITEMS.every(i=>e.chk?.[i.id])?30:0),0);
+
+  // Emoções do mês
+  const emoCount = {};
+  dias.forEach(e=>(e.emocoes||[]).forEach(id=>{emoCount[id]=(emoCount[id]||0)+1;}));
+  const topEmos = Object.entries(emoCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  // Hábitos do mês
+  const habStats = ITEMS.map(it=>({...it,pct:Math.round(dias.filter(e=>e.chk?.[it.id]).length/dias.length*100)})).sort((a,b)=>b.pct-a.pct);
+  const melhor3 = habStats.slice(0,3);
+  const pior3 = habStats.slice(-3).reverse();
+
+  // Semanas breakdown
+  const semanas = [];
+  for (let w = 0; w < 5; w++) {
+    const wDias = dias.filter(e => {
+      const d = new Date(e.date).getDate();
+      return d > w*7 && d <= (w+1)*7;
+    });
+    if (wDias.length) {
+      semanas.push({
+        label: `Semana ${w+1}`,
+        humor: (wDias.reduce((s,e)=>s+(e.mood||5),0)/wDias.length).toFixed(1),
+        rotina: Math.round(wDias.reduce((s,e)=>s+ITEMS.filter(i=>e.chk?.[i.id]).length,0)/(ITEMS.length*wDias.length)*100),
+        dias: wDias.length
+      });
+    }
+  }
+
+  // Nota geral mês
+  const notaMes = Math.round((pctRotina/100*7 + parseFloat(mediaHumor)/10*3)*10)/10;
+  let rotulo = notaMes>=8?"Mês muito bom! 🌟":notaMes>=6?"Mês razoável 👍":notaMes>=4?"Mês desafiador 💪":"Mês muito pesado 🧡";
+
+  const content = `
+    <div class="res-hdr">
+      <div style="font-size:11px;color:#F0D5CC;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">${mesNome} ${y} · ${dias.length} dias registrados</div>
+      <div style="font-size:46px;font-weight:600;line-height:1">${notaMes}</div>
+      <div style="font-size:14px;color:#F0D5CC;margin-top:2px;font-style:italic">${rotulo}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.8);margin-top:7px">Humor médio: ${mediaHumor}/10 · Rotina: ${pctRotina}% · ⭐ ${xpTotal} XP</div>
+    </div>
+
+    <div class="rblock">
+      <div class="rbtitle">📈 Evolução por semana</div>
+      ${semanas.map(s=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F0D5CC">
+        <span style="font-size:12px;color:#8B5E52;width:70px;flex-shrink:0">${s.label}</span>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#A08070;margin-bottom:3px"><span>Humor: ${s.humor}/10</span><span>Rotina: ${s.rotina}%</span></div>
+          <div style="background:#F0D5CC;border-radius:4px;height:5px;overflow:hidden"><div style="height:100%;background:#C1694F;width:${s.rotina}%"></div></div>
+        </div>
+        <span style="font-size:10px;color:#A08070;flex-shrink:0">${s.dias}d</span>
+      </div>`).join("")}
+    </div>
+
+    <div class="rblock">
+      <div class="rbtitle">💜 Emoções do mês</div>
+      ${topEmos.length ? topEmos.map(([id,cnt])=>{
+        const em=EMOCOES.find(e=>e.id===id);if(!em)return"";
+        return`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #F0D5CC">
+          <span style="font-size:18px">${em.e}</span>
+          <span style="font-size:13px;flex:1;color:${em.cor};font-weight:700">${em.l}</span>
+          <span style="font-size:11px;background:${em.cor}22;color:${em.cor};padding:2px 8px;border-radius:8px;font-weight:700">${cnt}x</span>
+        </div>`;
+      }).join("") : '<div style="font-size:12px;color:#A08070;font-style:italic">Nenhuma emoção registrada.</div>'}
+    </div>
+
+    <div class="rblock">
+      <div class="rbtitle">🏆 Melhores hábitos do mês</div>
+      ${melhor3.map(h=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #F0D5CC">
+        <span style="font-size:15px">${h.i}</span>
+        <span style="font-size:12px;flex:1">${h.l}</span>
+        <span style="font-size:12px;font-weight:700;color:#5A9B6B">${h.pct}%</span>
+      </div>`).join("")}
+    </div>
+
+    <div class="rblock">
+      <div class="rbtitle">🎯 Hábitos para focar no próximo mês</div>
+      ${pior3.map(h=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #F0D5CC">
+        <span style="font-size:15px">${h.i}</span>
+        <span style="font-size:12px;flex:1">${h.l}</span>
+        <span style="font-size:12px;font-weight:700;color:#C1694F">${h.pct}%</span>
+      </div>`).join("")}
+    </div>
+    <div class="tip">Um mês inteiro de autoconhecimento. Você está construindo algo sólido. 🧡</div>`;
+
+  document.getElementById("resumoMensalContent").innerHTML = content;
+
+  // Auto save
+  const rel = {
+    id: "rel_" + Date.now(),
+    tipo: "mensal",
+    periodo: `${mesNome} ${y}`,
+    dataInicio: `${y}-${String(m+1).padStart(2,"0")}-01`,
+    dataFim: `${y}-${String(m+1).padStart(2,"0")}-${String(dim).padStart(2,"0")}`,
+    html: content,
+    salvo: new Date().toISOString()
+  };
+  relatorios = relatorios.filter(r => r.dataInicio !== rel.dataInicio || r.tipo !== "mensal");
+  relatorios.unshift(rel);
+  await saveRelatorios();
+  showToast("toast", "✓ Resumo mensal salvo!", "ok");
+}
+
 function gerarResumo(){
   const last7d=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-i);return d.toISOString().split("T")[0];}).reverse();
   const semana=last7d.map(ds=>allData[ds]).filter(Boolean);
@@ -1255,7 +1629,7 @@ function mesPct(){
   const MS=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
   return{pct,dp,dim,reg,mes:MS[m]};
 }
-async function saveRc(){ls.setArr("rc",recompensas);await sto.set("recompensas",JSON.stringify(recompensas));}
+async function saveRc(){ls.setArr("rc",recompensas);await sb.set("recompensas",JSON.stringify(recompensas));}
 function addRc(){
   const emoji=document.getElementById("rcEmoji").value.trim()||"🎁";
   const nome=document.getElementById("rcNome").value.trim();
@@ -1311,7 +1685,7 @@ function mostrarSorteio(r,skip=false){
   document.getElementById("sorteioNome").textContent=r.nome;
   openModal("sorteioModal");
   if(!skip)confetes();
-  const d={nome:r.nome,emoji:r.emoji};localStorage.setItem(sorteioKey(),JSON.stringify(d));sto.set(sorteioKey(),JSON.stringify(d));
+  const d={nome:r.nome,emoji:r.emoji};localStorage.setItem(sorteioKey(),JSON.stringify(d));sb.set(sorteioKey(),JSON.stringify(d));
 }
 function celebrar(e,n){mostrarSorteio({emoji:e,nome:n});}
 function confetes(){
@@ -1340,7 +1714,7 @@ function showToast(id,msg,cls){
 // ── EDITAR ROTINA ──
 async function saveITEMS(){
   ls.setArr("rotina_items",ITEMS);
-  await sto.set("rotina_items",JSON.stringify(ITEMS));
+  await sb.set("rotina_items",JSON.stringify(ITEMS));
 }
 
 function toggleEditRot(){
@@ -1471,14 +1845,14 @@ async function addHabito(){
 let saudeItems=[], saudeFiltro="todos";
 
 async function loadSaude(){
-  const r=await sto.get("saude");
-  if(r){try{saudeItems=JSON.parse(r.value)}catch{}}
+  const r=await sb.get("saude");
+  if(r){try{saudeItems=JSON.parse(r)}catch{}}
   if(!saudeItems.length) saudeItems=ls.getArr("saude");
 }
 
 async function saveSaude(){
   ls.setArr("saude",saudeItems);
-  await sto.set("saude",JSON.stringify(saudeItems));
+  await sb.set("saude",JSON.stringify(saudeItems));
 }
 
 const SAUDE_CAT={
@@ -1582,14 +1956,14 @@ function renderSaude(){
 let pensamentos=[];
 
 async function loadPensamentos(){
-  const r=await sto.get("pensamentos");
-  if(r){try{pensamentos=JSON.parse(r.value)}catch{}}
+  const r=await sb.get("pensamentos");
+  if(r){try{pensamentos=JSON.parse(r)}catch{}}
   if(!pensamentos.length) pensamentos=ls.getArr("pensamentos");
 }
 
 async function savePensamentos(){
   ls.setArr("pensamentos",pensamentos);
-  await sto.set("pensamentos",JSON.stringify(pensamentos));
+  await sb.set("pensamentos",JSON.stringify(pensamentos));
 }
 
 function abrirNovoPensamento(){
@@ -1688,13 +2062,8 @@ async function exportarDados(){
 
   // Also try to pull from cloud storage in case localStorage is stale
   try{
-    const keys=await sto.list("d:");
-    if(keys){
-      for(const k of keys){
-        const r=await sto.get(k);
-        if(r){try{const e=JSON.parse(r.value);payload.registros[e.date]=e;}catch{}}
-      }
-    }
+    const rows=await sb.getAll("d:");
+    rows.forEach(row=>{try{const e=JSON.parse(row.valor);payload.registros[e.date]=e;}catch{}});
   }catch{}
 
   const json=JSON.stringify(payload,null,2);
@@ -1730,23 +2099,23 @@ async function importarDados(){
     ls.set(allData);
     // Save each entry to cloud
     for(const[date,e] of Object.entries(allData)){
-      await sto.set("d:"+date,JSON.stringify(e));
+      await sb.set("d:"+date,JSON.stringify(e));
     }
   }
   if(payload.recompensas){
     recompensas=payload.recompensas;
     ls.setArr("rc",recompensas);
-    await sto.set("recompensas",JSON.stringify(recompensas));
+    await sb.set("recompensas",JSON.stringify(recompensas));
   }
   if(payload.pensamentos){
     pensamentos=payload.pensamentos;
     ls.setArr("pensamentos",pensamentos);
-    await sto.set("pensamentos",JSON.stringify(pensamentos));
+    await sb.set("pensamentos",JSON.stringify(pensamentos));
   }
   if(payload.saudeItems){
     saudeItems=payload.saudeItems;
     ls.setArr("saude",saudeItems);
-    await sto.set("saude",JSON.stringify(saudeItems));
+    await sb.set("saude",JSON.stringify(saudeItems));
   }
   if(payload.rotina_items){
     ITEMS=payload.rotina_items;
