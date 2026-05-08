@@ -391,7 +391,8 @@ textarea:focus{border-color:#C1694F}
           <option value="9">9 - Muito bem</option>
           <option value="10">10 - Ótima!</option>
         </select>
-        <input id="dmLogHora" type="time" style="width:100px;flex-shrink:0;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0;color:#8B5E52">
+        <select id="dmLogHora_h" style="width:60px;flex-shrink:0;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px 4px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0;color:#8B5E52"></select>
+        <select id="dmLogHora_m" style="width:60px;flex-shrink:0;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px 4px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0;color:#8B5E52"></select>
       </div>
       <input id="dmLogNota" placeholder="O que estava sentindo? O que aconteceu?" style="width:100%;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px 11px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0;margin-bottom:10px;box-sizing:border-box">
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px" id="dmLogEmoGrid"></div>
@@ -585,8 +586,10 @@ textarea:focus{border-color:#C1694F}
         </select>
         <input id="saude_data" type="date" style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:12px;outline:none;background:#FAF3E0;color:#2C2C2C">
       </div>
-      <div style="display:flex;gap:8px;margin-bottom:10px">
-        <input id="saude_hora" type="time" placeholder="Horário" style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:12px;outline:none;background:#FAF3E0;color:#2C2C2C">
+      <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
+        <select id="saude_hora_h" style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:12px;outline:none;background:#FAF3E0;color:#2C2C2C"></select>
+        <span style="color:#A08070;font-weight:700">:</span>
+        <select id="saude_hora_m" style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:12px;outline:none;background:#FAF3E0;color:#2C2C2C"></select>
         <input id="saude_local" placeholder="Local (opcional)" style="flex:2;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px 11px;font-family:Georgia,serif;font-size:12px;outline:none;background:#FAF3E0">
       </div>
       <input id="saude_obs" placeholder="Observação (opcional)" style="width:100%;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px 11px;font-family:Georgia,serif;font-size:12px;outline:none;background:#FAF3E0;margin-bottom:10px">
@@ -594,7 +597,7 @@ textarea:focus{border-color:#C1694F}
     </div>
 
     <!-- FILTERS -->
-    <div style="display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap" id="saudeFiltros">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px" id="saudeFiltros">
       <button onclick="setSaudeFiltro('todos')" id="sf_todos" class="sf-btn sf-on">Todos</button>
       <button onclick="setSaudeFiltro('pendente')" id="sf_pendente" class="sf-btn">⏳ Pendentes</button>
       <button onclick="setSaudeFiltro('agendado')" id="sf_agendado" class="sf-btn">📅 Agendados</button>
@@ -752,6 +755,52 @@ let calY=new Date().getFullYear(), calM=new Date().getMonth();
 const APP_VERSION = "2026-05-08-v5"; // Mude isso a cada deploy pra confirmar versão
 function dbg(m){ try{ console.log("[diario]", m); }catch{} }
 
+// ── HELPERS de hora (selects HH/MM, sem time picker nativo) ──
+function popularTimeSelects(prefix, options){
+  options = options || {};
+  const minStep = options.minStep || 5;
+  const eh = document.getElementById(prefix+"_h");
+  const em = document.getElementById(prefix+"_m");
+  if(!eh || !em) return;
+  if(eh.options.length===0){
+    let oh = '<option value="">--</option>';
+    for(let i=0;i<24;i++){ const v=String(i).padStart(2,"0"); oh += `<option value="${v}">${v}</option>`; }
+    eh.innerHTML = oh;
+  }
+  if(em.options.length===0){
+    let om = '<option value="">--</option>';
+    for(let i=0;i<60;i+=minStep){ const v=String(i).padStart(2,"0"); om += `<option value="${v}">${v}</option>`; }
+    em.innerHTML = om;
+  }
+}
+function getTimeVal(prefix){
+  const h = document.getElementById(prefix+"_h")?.value || "";
+  const m = document.getElementById(prefix+"_m")?.value || "";
+  if(!h || !m) return "";
+  return h + ":" + m;
+}
+function setTimeVal(prefix, val){
+  const eh = document.getElementById(prefix+"_h");
+  const em = document.getElementById(prefix+"_m");
+  if(!eh || !em) return;
+  if(!val){ eh.value=""; em.value=""; return; }
+  const parts = val.split(":");
+  eh.value = parts[0] || "";
+  // Arredonda minuto pro step mais próximo se não bater exato
+  let mm = parts[1] || "";
+  if(em.querySelector(`option[value="${mm}"]`)){
+    em.value = mm;
+  } else if(mm) {
+    const mNum = parseInt(mm)||0;
+    const opts = Array.from(em.options).map(o=>parseInt(o.value)).filter(n=>!isNaN(n));
+    let best = opts[0]||0;
+    for(const o of opts){ if(Math.abs(o-mNum) < Math.abs(best-mNum)) best=o; }
+    em.value = String(best).padStart(2,"0");
+  } else {
+    em.value = "";
+  }
+}
+
 // fetch com timeout pra não travar a UI em rede ruim
 async function tFetch(url, opts={}, ms=10000) {
   const ctrl = new AbortController();
@@ -863,6 +912,9 @@ async function init() {
   await loadSaude();
   await loadRelatorios();
   calcXP(); loadToday();
+  // Popula os selects de hora (Saúde + logs do dia) com opções HH/MM
+  popularTimeSelects("saude_hora");
+  popularTimeSelects("dmLogHora");
   // Renderiza o calendário (tela inicial) - sem isso ele fica em branco até trocar de aba
   if (typeof renderCal === 'function') renderCal();
 
@@ -1226,15 +1278,12 @@ function openDay(ds){
   dmLogEmoSel=[];
   const lm=document.getElementById("dmLogMood");if(lm)lm.value=5;
   const ln=document.getElementById("dmLogNota");if(ln)ln.value="";
-  const lh=document.getElementById("dmLogHora");
-  if(lh){
-    // Hoje: pré-preenche com hora atual; passado: deixa vazio
-    if(ds===todayStr()){
-      const now=new Date();
-      lh.value=now.toTimeString().slice(0,5);
-    } else {
-      lh.value="";
-    }
+  popularTimeSelects("dmLogHora");
+  if(ds===todayStr()){
+    const now=new Date();
+    setTimeVal("dmLogHora", now.toTimeString().slice(0,5));
+  } else {
+    setTimeVal("dmLogHora", "");
   }
   renderDmLogEmoGrid();
   renderDmLogLista();
@@ -1326,7 +1375,7 @@ async function dmAdicionarLog(){
   if(!dmDate)return;
   const mood=parseInt(document.getElementById("dmLogMood").value)||5;
   const nota=document.getElementById("dmLogNota").value.trim();
-  let hora=document.getElementById("dmLogHora").value;
+  let hora=getTimeVal("dmLogHora");
   if(!hora){
     if(dmDate===todayStr()){
       hora=new Date().toTimeString().slice(0,5);
@@ -1350,7 +1399,9 @@ async function dmAdicionarLog(){
   document.getElementById("dmLogNota").value="";
   document.getElementById("dmLogMood").value=5;
   if(dmDate===todayStr()){
-    document.getElementById("dmLogHora").value=new Date().toTimeString().slice(0,5);
+    setTimeVal("dmLogHora", new Date().toTimeString().slice(0,5));
+  } else {
+    setTimeVal("dmLogHora", "");
   }
   dmLogEmoSel=[];
   renderDmLogEmoGrid();
@@ -2105,7 +2156,7 @@ async function addSaude(){
     nome,
     cat:document.getElementById("saude_cat").value,
     data:document.getElementById("saude_data").value||"",
-    hora:document.getElementById("saude_hora")?.value||"",
+    hora:getTimeVal("saude_hora"),
     local:document.getElementById("saude_local")?.value.trim()||"",
     obs:document.getElementById("saude_obs").value.trim(),
     status:"pendente",
@@ -2114,7 +2165,6 @@ async function addSaude(){
   saudeItems.unshift(item);
   ls.setArr("saude",saudeItems);
   renderSaude();
-  // Salva no servidor em background, com retry se falhar
   const ok=await sb.set("saude",JSON.stringify(saudeItems));
   if(ok){
     showToast("toast","✓ "+item.nome+" adicionado","ok");
@@ -2123,7 +2173,7 @@ async function addSaude(){
   }
   document.getElementById("saude_nome").value="";
   document.getElementById("saude_data").value="";
-  if(document.getElementById("saude_hora")) document.getElementById("saude_hora").value="";
+  setTimeVal("saude_hora","");
   if(document.getElementById("saude_local")) document.getElementById("saude_local").value="";
   document.getElementById("saude_obs").value="";
 }
@@ -2389,6 +2439,64 @@ if ('serviceWorker' in navigator) {
 let _lastSync = Date.now();
 async function autoResync() {
   if (!useCloud) return;
+  try {
+    const rows = await sb.getAll("d:");
+    if (rows && rows.length) {
+      rows.forEach(row => {
+        try {
+          const e = JSON.parse(row.valor);
+          const cur = allData[e.date];
+          if (!cur || new Date(e.saved||0) >= new Date(cur.saved||0)) {
+            allData[e.date] = e;
+          }
+        } catch {}
+      });
+      ls.set(allData);
+    }
+    function mergeArr(serverRaw, localArr){
+      if(!serverRaw) return localArr;
+      try {
+        const parsed = JSON.parse(serverRaw);
+        if (!Array.isArray(parsed)) return localArr;
+        if (parsed.length === 0 && localArr.length > 0) return localArr;
+        return parsed;
+      } catch { return localArr; }
+    }
+    const rv = await sb.get("recompensas");
+    recompensas = mergeArr(rv, recompensas); ls.setArr("rc", recompensas);
+    const rp = await sb.get("pensamentos");
+    pensamentos = mergeArr(rp, pensamentos); ls.setArr("pensamentos", pensamentos);
+    const rs = await sb.get("saude");
+    saudeItems = mergeArr(rs, saudeItems); ls.setArr("saude", saudeItems);
+    const rr = await sb.get("relatorios");
+    relatorios = mergeArr(rr, relatorios); ls.setArr("relatorios", relatorios);
+    const ri = await sb.get("rotina_items");
+    ITEMS = mergeArr(ri, ITEMS); ls.setArr("rotina_items", ITEMS);
+    _lastSync = Date.now();
+    if (typeof renderHist === 'function') renderHist();
+    if (typeof renderCal === 'function') renderCal();
+    if (typeof renderPensamentos === 'function') renderPensamentos();
+    if (typeof renderSaude === 'function') renderSaude();
+    if (typeof renderRecomp === 'function') renderRecomp();
+    setStatus("Sincronizado - " + Object.keys(allData).length + " dias");
+  } catch (e) {
+    setStatus("Sem conexao - tentando de novo...");
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    if (Date.now() - _lastSync > 5000) autoResync();
+  }
+});
+window.addEventListener('online', () => autoResync());
+setInterval(() => { if (document.visibilityState === 'visible') autoResync(); }, 60000);
+</script>
+</body>
+</html>
+/body>
+</html>
+Cloud) return;
   try {
     const rows = await sb.getAll("d:");
     if (rows && rows.length) {
