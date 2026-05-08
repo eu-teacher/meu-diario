@@ -323,7 +323,7 @@ textarea:focus{border-color:#C1694F}
       <div class="passo-num" style="background:#5A9B6B">7</div>
       <div class="passo-body">
         <div class="passo-title">Como você se sente agora?</div>
-        <div class="passo-desc">Mesma emoção do passo 2 — qual a intensidade agora?</div>
+        <div class="passo-desc">Mesma emoção do passo 2 - qual a intensidade agora?</div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
           <span style="font-size:13px;color:#2C2C2C">Intensidade atual:</span>
           <input type="number" id="p_intensidade_depois" min="0" max="100" placeholder="%" style="width:62px;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0;text-align:center">
@@ -348,7 +348,7 @@ textarea:focus{border-color:#C1694F}
       <div class="mood-num" id="dmNum" style="color:#C1694F">5</div>
       <div class="mood-lbl" id="dmLbl">Neutro</div>
       <input type="range" min="1" max="10" value="5" id="dmSlider" oninput="dmMood(this.value)">
-      <div class="scale"><span>1 — muito difícil</span><span>10 — ótima</span></div>
+      <div class="scale"><span>1 - muito difícil</span><span>10 - ótima</span></div>
     </div>
     <div style="margin-bottom:12px">
       <div class="nlbl">Como você se sentiu?</div>
@@ -379,10 +379,21 @@ textarea:focus{border-color:#C1694F}
     <div class="card" style="margin-bottom:10px">
       <div style="font-size:11px;color:#A08070;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Adicionar registro</div>
       <div style="display:flex;gap:8px;margin-bottom:8px">
-        <input type="number" id="dmLogMood" min="1" max="10" value="5" style="width:60px;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:18px;font-weight:700;text-align:center;outline:none;background:#FAF3E0;color:#C1694F">
-        <input id="dmLogHora" type="time" style="width:90px;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0;color:#8B5E52">
-        <input id="dmLogNota" placeholder="O que estava sentindo? O que aconteceu?" style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px 11px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0">
+        <select id="dmLogMood" style="flex:1;min-width:0;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:13px;font-weight:700;outline:none;background:#FAF3E0;color:#C1694F">
+          <option value="1">1 - Muito difícil</option>
+          <option value="2">2 - Muito difícil</option>
+          <option value="3">3 - Difícil</option>
+          <option value="4">4 - Difícil</option>
+          <option value="5" selected>5 - Neutro</option>
+          <option value="6">6 - Okay</option>
+          <option value="7">7 - Bem</option>
+          <option value="8">8 - Bem</option>
+          <option value="9">9 - Muito bem</option>
+          <option value="10">10 - Ótima!</option>
+        </select>
+        <input id="dmLogHora" type="time" style="width:100px;flex-shrink:0;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0;color:#8B5E52">
       </div>
+      <input id="dmLogNota" placeholder="O que estava sentindo? O que aconteceu?" style="width:100%;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px 11px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0;margin-bottom:10px;box-sizing:border-box">
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px" id="dmLogEmoGrid"></div>
       <button onclick="dmAdicionarLog()" style="width:100%;padding:11px;background:#8B5E52;color:#fff;border:none;border-radius:10px;font-family:Georgia,serif;font-size:12px;font-weight:700;cursor:pointer">+ Adicionar registro</button>
     </div>
@@ -508,7 +519,7 @@ textarea:focus{border-color:#C1694F}
     </div>
     <div class="mais-item" onclick="goTo('pensamentos')">
       <span style="font-size:28px">🧠</span>
-      <div><div style="font-size:15px;font-weight:700">Registro de Pensamentos</div><div style="font-size:12px;color:#A08070;margin-top:2px">TCC — identifique e questione pensamentos automáticos</div></div>
+      <div><div style="font-size:15px;font-weight:700">Registro de Pensamentos</div><div style="font-size:12px;color:#A08070;margin-top:2px">TCC - identifique e questione pensamentos automáticos</div></div>
     </div>
     <div class="mais-item" onclick="goTo('niveis')">
       <span style="font-size:28px">⭐</span>
@@ -535,7 +546,7 @@ textarea:focus{border-color:#C1694F}
     <!-- EXPORTAR -->
     <div class="rblock">
       <div class="rbtitle">📤 Exportar meus dados</div>
-      <div style="font-size:12px;color:#A08070;margin-bottom:12px;line-height:1.6">Baixa um arquivo JSON com todos os seus registros — humores, hábitos, pensamentos e recompensas.</div>
+      <div style="font-size:12px;color:#A08070;margin-bottom:12px;line-height:1.6">Baixa um arquivo JSON com todos os seus registros - humores, hábitos, pensamentos e recompensas.</div>
       <button onclick="exportarDados()" class="btn" style="margin-top:0">Baixar meus dados (JSON)</button>
     </div>
 
@@ -557,7 +568,7 @@ textarea:focus{border-color:#C1694F}
       <button onclick="goTo('mais')" style="background:none;border:none;font-size:20px;cursor:pointer;color:#C1694F;padding:0">‹</button>
       <div class="stitle" style="margin-bottom:0">Saúde 🩺</div>
     </div>
-    <div class="ssub">Consultas, exames e cuidados — tudo em um lugar</div>
+    <div class="ssub">Consultas, exames e cuidados - tudo em um lugar</div>
 
     <!-- ADD FORM -->
     <div style="background:#fff;border-radius:14px;padding:14px;margin-bottom:14px;box-shadow:0 2px 10px rgba(193,105,79,.1)">
@@ -573,6 +584,10 @@ textarea:focus{border-color:#C1694F}
           <option value="outro">📋 Outro</option>
         </select>
         <input id="saude_data" type="date" style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:12px;outline:none;background:#FAF3E0;color:#2C2C2C">
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input id="saude_hora" type="time" placeholder="Horário" style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:12px;outline:none;background:#FAF3E0;color:#2C2C2C">
+        <input id="saude_local" placeholder="Local (opcional)" style="flex:2;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px 11px;font-family:Georgia,serif;font-size:12px;outline:none;background:#FAF3E0">
       </div>
       <input id="saude_obs" placeholder="Observação (opcional)" style="width:100%;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px 11px;font-family:Georgia,serif;font-size:12px;outline:none;background:#FAF3E0;margin-bottom:10px">
       <button onclick="addSaude()" class="btn" style="margin-top:0">Adicionar</button>
@@ -598,7 +613,7 @@ textarea:focus{border-color:#C1694F}
     <div class="ssub">Ferramenta de TCC para questionar pensamentos automáticos</div>
 
     <div style="background:#F0D5CC;border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#8B5E52;line-height:1.6">
-      💜 <strong>Como usar:</strong> Quando sentir uma emoção intensa, preencha este registro. O objetivo não é pensar positivo — é pensar <em>com mais precisão</em>.
+      💜 <strong>Como usar:</strong> Quando sentir uma emoção intensa, preencha este registro. O objetivo não é pensar positivo - é pensar <em>com mais precisão</em>.
     </div>
 
     <button onclick="abrirNovoPensamento()" class="btn" style="margin-bottom:16px">➕ Novo registro de pensamento</button>
@@ -660,15 +675,15 @@ textarea:focus{border-color:#C1694F}
     <div class="rblock">
       <div class="rbtitle">🕐 Referência de horários</div>
       <div class="rrow"><span class="rtime">8h30</span><span class="rtxt">Acordar. Sem celular por 15 min. Luz natural.</span></div>
-      <div class="rrow"><span class="rtime">8h45</span><span class="rtxt">Café da manhã — sentada, sem tela.</span></div>
+      <div class="rrow"><span class="rtime">8h45</span><span class="rtxt">Café da manhã - sentada, sem tela.</span></div>
       <div class="rrow"><span class="rtime">9h15</span><span class="rtxt">20–30 min de caminhada ou dança em casa.</span></div>
       <div class="rrow"><span class="rtime">10h</span><span class="rtxt">Planejamento de aulas, e-mails, admin.</span></div>
-      <div class="rrow"><span class="rtime">11h30</span><span class="rtxt">Almoço — refeição de verdade. Não pule.</span></div>
+      <div class="rrow"><span class="rtime">11h30</span><span class="rtxt">Almoço - refeição de verdade. Não pule.</span></div>
       <div class="rrow"><span class="rtime">12h30</span><span class="rtxt">Pronta para as aulas.</span></div>
       <div class="rrow"><span class="rtime">Ao terminar aula</span><span class="rtxt">Anotar humor. Sem redes sociais por 30 min.</span></div>
-      <div class="rrow"><span class="rtime">23h30</span><span class="rtxt">Na cama — mesmo que não durma logo.</span></div>
+      <div class="rrow"><span class="rtime">23h30</span><span class="rtxt">Na cama - mesmo que não durma logo.</span></div>
     </div>
-    <div class="tip">O objetivo não é perfeição — é âncora.<br>Um dia de cada vez. 🧡</div>
+    <div class="tip">O objetivo não é perfeição - é âncora.<br>Um dia de cada vez. 🧡</div>
   </div>
 
 </div><!-- end body -->
@@ -719,14 +734,14 @@ let ITEMS_DEFAULT=[
   {id:"move", l:"Me movi (caminhada/dança)",  i:"🚶‍♀️",g:"manhã",  imp:"A",xp:20,m:"Exercício aeróbico tem efeito comprovado na estabilização do humor bipolar."},
   {id:"lunch",l:"Almoço de verdade",          i:"🥗", g:"manhã",  imp:"A",xp:15,m:"Queda de glicose é gatilho direto para instabilidade de humor."},
   {id:"meals",l:"3 refeições completas",      i:"🍽️",g:"comida", imp:"A",xp:15,m:"Alimentação regular estabiliza glicemia e serotonina."},
-  {id:"water",l:"Bebi água ao longo do dia",  i:"💧", g:"comida", imp:"B",xp:10,m:"Desidratação afeta humor — especialmente com lítio."},
+  {id:"water",l:"Bebi água ao longo do dia",  i:"💧", g:"comida", imp:"B",xp:10,m:"Desidratação afeta humor - especialmente com lítio."},
   {id:"log",  l:"Registrei meu humor",        i:"📝", g:"noite",  imp:"B",xp:10,m:"O automonitoramento ajuda a identificar padrões precoces."},
-  {id:"nosc", l:"Sem telas 30 min após aula", i:"📵", g:"noite",  imp:"A",xp:20,m:"Luz azul suprime melatonina — gatilho para episódios bipolares."},
+  {id:"nosc", l:"Sem telas 30 min após aula", i:"📵", g:"noite",  imp:"A",xp:20,m:"Luz azul suprime melatonina - gatilho para episódios bipolares."},
   {id:"bed",  l:"Na cama até 23h30",          i:"🌙", g:"noite",  imp:"A",xp:20,m:"Sono irregular é o principal gatilho de episódios bipolares."},
 ];
 let ITEMS=[...ITEMS_DEFAULT];
 
-let chk={}, allData={}, recompensas=[], useCloud=false, totalXP=0, prevLvl=1;
+let chk={}, allData={}, recompensas=[], useCloud=false, totalXP=0, prevLvl=1, lvlInited=false;
 let semAula=false, selectedEmos=[], editRotMode=false;
 let dmDate="", dmChk={}, dmSemAula=false, dmEmos=[];
 let calY=new Date().getFullYear(), calM=new Date().getMonth();
@@ -734,7 +749,7 @@ let calY=new Date().getFullYear(), calM=new Date().getMonth();
 // ── STORAGE ──
 // ── SUPABASE ──
 // ── API PROXY (via Railway server) ──
-const APP_VERSION = "2026-05-08-v3-cal"; // Mude isso a cada deploy pra confirmar versão
+const APP_VERSION = "2026-05-08-v4"; // Mude isso a cada deploy pra confirmar versão
 function dbg(m){ try{ console.log("[diario]", m); }catch{} }
 
 // fetch com timeout pra não travar a UI em rede ruim
@@ -828,10 +843,10 @@ async function init() {
     allData = merged;
     ls.set(allData);
     useCloud = true;
-    setStatus(`☁️ Sincronizado — ${Object.keys(allData).length} dias`);
+    setStatus(`☁️ Sincronizado - ${Object.keys(allData).length} dias`);
   } catch(e) {
     console.error("Supabase init error:", e);
-    setStatus("⚠️ Offline — salvando localmente");
+    setStatus("⚠️ Offline - salvando localmente");
     // Tenta de novo em 10s
     setTimeout(() => { if (!useCloud) init(); }, 10000);
   }
@@ -848,6 +863,8 @@ async function init() {
   await loadSaude();
   await loadRelatorios();
   calcXP(); loadToday();
+  // Renderiza o calendário (tela inicial) - sem isso ele fica em branco até trocar de aba
+  if (typeof renderCal === 'function') renderCal();
 
   const n = new Date();
   const ds = ["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"];
@@ -873,7 +890,7 @@ async function forcSync(){
       });
       ls.set(allData);
     }
-    setStatus(`☁️ Sincronizado — ${Object.keys(allData).length} dias`);
+    setStatus(`☁️ Sincronizado - ${Object.keys(allData).length} dias`);
     loadToday();
     showToast("toast","✓ Dados atualizados!","ok");
   } catch(e) {
@@ -946,7 +963,6 @@ function calcXP(){
     active.forEach(it=>{if(e.chk[it.id])totalXP+=it.xp;});
     if(active.every(it=>e.chk[it.id]))totalXP+=30;
   });
-  const prev=prevLvl;
   const lv=getLevel(totalXP);
   const next=LEVELS.find(l=>l.n===lv.n+1);
   const pct=next?Math.round((totalXP-lv.min)/(next.min-lv.min)*100):100;
@@ -955,12 +971,23 @@ function calcXP(){
   document.getElementById("lvlNum").textContent="Nível "+lv.n;
   document.getElementById("lvlXp").textContent=totalXP+" XP";
   document.getElementById("xpFill").style.width=pct+"%";
-  if(lv.n>prev){
+
+  // Lê o nível salvo da última vez que abriu o app (persistente entre sessões)
+  if(!lvlInited){
+    let stored=parseInt(localStorage.getItem("savedLvl")||"0");
+    if(!stored||stored<1) stored=lv.n; // primeira vez: assume nível atual sem popup
+    prevLvl=stored;
+    lvlInited=true;
+  }
+
+  // Só dispara popup se REALMENTE subiu de nível agora (e não na primeira renderização)
+  if(lv.n>prevLvl){
     document.getElementById("lvlEmoji").textContent=lv.icon;
-    document.getElementById("lvlMsg").innerHTML=`Agora você é <strong>${lv.name}</strong>!<br>${lv.msg}`;
+    document.getElementById("lvlMsg").innerHTML="Agora você é <strong>"+lv.name+"</strong>!<br>"+lv.msg;
     openModal("lvlModal");
   }
   prevLvl=lv.n;
+  try{ localStorage.setItem("savedLvl", String(lv.n)); }catch{}
 }
 function getLevel(xp){for(let i=LEVELS.length-1;i>=0;i--)if(xp>=LEVELS[i].min)return LEVELS[i];return LEVELS[0];}
 
@@ -1005,7 +1032,7 @@ function buildEmoGrid(containerId, selectedArr){
 }
 
 function toggleEmo(id, containerId, arr){
-  // arr is a reference issue in inline — use containerId to decide
+  // arr is a reference issue in inline - use containerId to decide
   const isMain=containerId==='emoGrid';
   const target=isMain?selectedEmos:dmEmos;
   const idx=target.indexOf(id);
@@ -1071,7 +1098,7 @@ function buildChecklist(){
     gItems.forEach(it=>{
       if(it.id==="nosc"&&semAula){
         h+=`<div class="ci" style="opacity:.4;cursor:default">
-          <div class="cbox" style="background:#F0D5CC;border-color:#F0D5CC;color:#A08070">—</div>
+          <div class="cbox" style="background:#F0D5CC;border-color:#F0D5CC;color:#A08070">-</div>
           <span style="font-size:15px">${it.i}</span>
           <span style="font-size:13px;flex:1;color:#A08070">${it.l}</span>
           <span style="font-size:10px;color:#A08070;background:#F0D5CC;padding:2px 7px;border-radius:10px">sem aula</span>
@@ -1146,13 +1173,13 @@ function clearDraft(){
 // Função antiga - mantida como no-op pra compatibilidade
 function loadToday(){ /* página "Hoje" foi removida; tudo agora é via modal do calendário */ }
 
-// Funções antigas dos logs (página "Hoje" removida) — stubs pra não quebrar referências
+// Funções antigas dos logs (página "Hoje" removida) - stubs pra não quebrar referências
 let logEmoSel=[];
 function renderLogEmoGrid(){}
 function toggleLogEmo(){}
 function renderLogLista(){}
-async function adicionarLog(){ /* removido — use dmAdicionarLog via modal */ }
-async function deletarLog(){ /* removido — use dmDeletarLog via modal */ }
+async function adicionarLog(){ /* removido - use dmAdicionarLog via modal */ }
+async function deletarLog(){ /* removido - use dmDeletarLog via modal */ }
 
 // Função antiga - agora redireciona pro modal
 async function saveToday(){ openDay(todayStr()); }
@@ -1229,7 +1256,7 @@ function buildDmList(){
     ITEMS.filter(i=>i.g===g).forEach(it=>{
       if(it.id==="nosc"&&dmSemAula){
         h+=`<div class="ci" style="opacity:.4;cursor:default">
-          <div class="cbox" style="background:#F0D5CC;border-color:#F0D5CC;color:#A08070">—</div>
+          <div class="cbox" style="background:#F0D5CC;border-color:#F0D5CC;color:#A08070">-</div>
           <span style="font-size:15px">${it.i}</span>
           <span style="font-size:13px;flex:1;color:#A08070">${it.l}</span>
           <span style="font-size:10px;color:#A08070;background:#F0D5CC;padding:2px 7px;border-radius:10px">sem aula</span>
@@ -1455,7 +1482,7 @@ async function gerarEsalvar() {
     const rel = {
       id: "rel_" + Date.now(),
       tipo: "semanal",
-      periodo: `${fmtD(last7d[0])} — ${fmtD(last7d[6])}`,
+      periodo: `${fmtD(last7d[0])} - ${fmtD(last7d[6])}`,
       dataInicio: last7d[0],
       dataFim: last7d[6],
       html: content,
@@ -1732,12 +1759,12 @@ function gerarResumo(){
   let rot,det;
   if(nF>=8){rot="Semana muito boa! 🌟";det="Você manteve ótima consistência.";}
   else if(nF>=6){rot="Semana razoável 👍";det="Teve altos e baixos, mas você se cuidou.";}
-  else if(nF>=4){rot="Semana difícil 💪";det="Algumas coisas ficaram pra trás — e tudo bem.";}
+  else if(nF>=4){rot="Semana difícil 💪";det="Algumas coisas ficaram pra trás - e tudo bem.";}
   else{rot="Semana muito pesada 🧡";det="Você passou por algo difícil. Isso também passa.";}
   const barras=hS.map(h=>{const c=h.pct>=70?"#5A9B6B":h.pct>=40?"#CC7755":"#9B4040";return`<div class="hab-item"><div class="hab-top"><span style="font-size:12px">${h.i} ${h.l}</span><span style="font-size:12px;font-weight:700;color:${c}">${h.pct}%</span></div><div class="hab-bar"><div class="hab-fill" style="width:${h.pct}%;background:${c}"></div></div></div>`;}).join("");
-  const conq=bF.length?bF.map(h=>`<div class="conquista"><span style="font-size:18px">${h.i}</span><div style="font-size:12px;color:#8B5E52"><strong>${h.l}</strong><br>${h.f} de ${dias} dias — ${h.pct}% ✅</div></div>`).join(""):`<div style="font-size:13px;color:#A08070;font-style:italic;padding:8px 0">Nenhum hábito com 70%+ ainda — mas você está começando. 🧡</div>`;
+  const conq=bF.length?bF.map(h=>`<div class="conquista"><span style="font-size:18px">${h.i}</span><div style="font-size:12px;color:#8B5E52"><strong>${h.l}</strong><br>${h.f} de ${dias} dias - ${h.pct}% ✅</div></div>`).join(""):`<div style="font-size:13px;color:#A08070;font-style:italic;padding:8px 0">Nenhum hábito com 70%+ ainda - mas você está começando. 🧡</div>`;
   const altR=mel.filter(h=>h.imp==="A");
-  const imp=altR.length?altR.map(h=>`<div class="imp-item"><span style="font-size:16px;flex-shrink:0;margin-top:1px">⚠️</span><div style="font-size:12px;line-height:1.5"><strong style="color:#C1694F">${h.i} ${h.l}</strong> — ${h.pct}% dos dias.<br>${h.m}</div></div>`).join(""):`<div class="imp-item"><span style="font-size:16px">✅</span><div style="font-size:12px">Nenhum hábito de alto impacto muito negligenciado!</div></div>`;
+  const imp=altR.length?altR.map(h=>`<div class="imp-item"><span style="font-size:16px;flex-shrink:0;margin-top:1px">⚠️</span><div style="font-size:12px;line-height:1.5"><strong style="color:#C1694F">${h.i} ${h.l}</strong> - ${h.pct}% dos dias.<br>${h.m}</div></div>`).join(""):`<div class="imp-item"><span style="font-size:16px">✅</span><div style="font-size:12px">Nenhum hábito de alto impacto muito negligenciado!</div></div>`;
   const focos=[...altR,...mel.filter(h=>h.imp==="B")].slice(0,3);
   const prox=focos.length?focos.map((h,i)=>`<div class="prox-item"><div class="prox-num">${i+1}</div><div style="font-size:12px;line-height:1.5"><strong>${h.i} ${h.l}</strong><br>${h.pct}% dos dias → meta: 70% na próx. semana.</div></div>`).join(""):`<div class="prox-item"><div class="prox-num">✓</div><div style="font-size:12px">Você foi muito bem! Mantenha a consistência.</div></div>`;
   // ── PAINEL DE EMOÇÕES ──
@@ -1771,7 +1798,7 @@ function gerarResumo(){
 
   document.getElementById("resumoContent").innerHTML=`
     <div class="res-hdr">
-      <div style="font-size:11px;color:#F0D5CC;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">${fmtD(last7d[0])} — ${fmtD(last7d[6])} · ${dias} dias</div>
+      <div style="font-size:11px;color:#F0D5CC;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">${fmtD(last7d[0])} - ${fmtD(last7d[6])} · ${dias} dias</div>
       <div style="font-size:46px;font-weight:600;line-height:1">${nF}</div>
       <div style="font-size:14px;color:#F0D5CC;margin-top:2px;font-style:italic">${rot}</div>
       <div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:3px;font-style:italic">${det}</div>
@@ -1824,21 +1851,33 @@ function mesPct(){
   const MS=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
   return{pct,dp,dim,reg,mes:MS[m]};
 }
-async function saveRc(){ls.setArr("rc",recompensas);await sb.set("recompensas",JSON.stringify(recompensas));}
-function addRc(){
+async function saveRc(){
+  ls.setArr("rc",recompensas);
+  const ok=await sb.set("recompensas",JSON.stringify(recompensas));
+  if(!ok) showToast("toast","💾 Salvo no aparelho - sem conexão com nuvem","err");
+  return ok;
+}
+async function addRc(){
   const emoji=document.getElementById("rcEmoji").value.trim()||"🎁";
   const nome=document.getElementById("rcNome").value.trim();
   const cat=document.getElementById("rcCat").value;
   const meta=parseInt(document.getElementById("rcMeta").value)||80;
   if(!nome){document.getElementById("rcNome").focus();return;}
   recompensas.push({id:Date.now(),emoji,nome,cat,meta});
-  saveRc();
+  ls.setArr("rc",recompensas);
   document.getElementById("rcNome").value="";
   document.getElementById("rcEmoji").value="";
   document.getElementById("rcMeta").value="";
   renderRecomp();
+  const ok=await sb.set("recompensas",JSON.stringify(recompensas));
+  showToast("toast", ok?"✓ "+nome+" adicionado":"💾 Salvo no aparelho - sem conexão", ok?"ok":"err");
 }
-function delRc(id){recompensas=recompensas.filter(r=>r.id!==id);saveRc();renderRecomp();}
+async function delRc(id){
+  recompensas=recompensas.filter(r=>r.id!==id);
+  ls.setArr("rc",recompensas);
+  renderRecomp();
+  await sb.set("recompensas",JSON.stringify(recompensas));
+}
 const CATLBL={comprar:"🛍️ Comprar",fazer:"🌟 Fazer","experiência":"✨ Experiência",cuidado:"💆 Autocuidado"};
 function sorteioKey(){const n=new Date();return`sk:${n.getFullYear()}-${n.getMonth()+1}`;}
 function renderRecomp(){
@@ -2066,16 +2105,27 @@ async function addSaude(){
     nome,
     cat:document.getElementById("saude_cat").value,
     data:document.getElementById("saude_data").value||"",
+    hora:document.getElementById("saude_hora")?.value||"",
+    local:document.getElementById("saude_local")?.value.trim()||"",
     obs:document.getElementById("saude_obs").value.trim(),
     status:"pendente",
     criado:todayStr()
   };
   saudeItems.unshift(item);
-  await saveSaude();
+  ls.setArr("saude",saudeItems);
+  renderSaude();
+  // Salva no servidor em background, com retry se falhar
+  const ok=await sb.set("saude",JSON.stringify(saudeItems));
+  if(ok){
+    showToast("toast","✓ "+item.nome+" adicionado","ok");
+  } else {
+    showToast("toast","💾 Salvo no aparelho - sem conexão com nuvem","err");
+  }
   document.getElementById("saude_nome").value="";
   document.getElementById("saude_data").value="";
+  if(document.getElementById("saude_hora")) document.getElementById("saude_hora").value="";
+  if(document.getElementById("saude_local")) document.getElementById("saude_local").value="";
   document.getElementById("saude_obs").value="";
-  renderSaude();
 }
 
 async function toggleSaudeStatus(id){
@@ -2137,7 +2187,8 @@ function renderSaude(){
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           <span style="font-size:10px;color:#8B5E52">${cat.icon} ${cat.label}</span>
-          ${it.data?`<span style="font-size:10px;color:#A08070">· ${fmtDataSaude(it.data)}</span>`:""}
+          ${it.data?`<span style="font-size:10px;color:#A08070">· ${fmtDataSaude(it.data)}${it.hora?" às "+it.hora:""}</span>`:(it.hora?`<span style="font-size:10px;color:#A08070">· ${it.hora}</span>`:"")}
+          ${it.local?`<span style="font-size:10px;color:#A08070">· 📍 ${it.local}</span>`:""}
           <span style="font-size:10px;font-weight:700;color:${st.cor}">${st.icon} ${st.label}</span>
         </div>
         ${it.obs?`<div style="font-size:12px;color:#A08070;margin-top:4px;font-style:italic">${it.obs}</div>`:""}
@@ -2352,21 +2403,31 @@ async function autoResync() {
       });
       ls.set(allData);
     }
+    function mergeArr(serverRaw, localArr){
+      if(!serverRaw) return localArr;
+      try {
+        const parsed = JSON.parse(serverRaw);
+        if (!Array.isArray(parsed)) return localArr;
+        if (parsed.length === 0 && localArr.length > 0) return localArr;
+        return parsed;
+      } catch { return localArr; }
+    }
     const rv = await sb.get("recompensas");
-    if (rv) { try { recompensas = JSON.parse(rv); ls.setArr("rc", recompensas); } catch {} }
+    recompensas = mergeArr(rv, recompensas); ls.setArr("rc", recompensas);
     const rp = await sb.get("pensamentos");
-    if (rp) { try { pensamentos = JSON.parse(rp); ls.setArr("pensamentos", pensamentos); } catch {} }
+    pensamentos = mergeArr(rp, pensamentos); ls.setArr("pensamentos", pensamentos);
     const rs = await sb.get("saude");
-    if (rs) { try { saudeItems = JSON.parse(rs); ls.setArr("saude", saudeItems); } catch {} }
+    saudeItems = mergeArr(rs, saudeItems); ls.setArr("saude", saudeItems);
     const rr = await sb.get("relatorios");
-    if (rr) { try { relatorios = JSON.parse(rr); ls.setArr("relatorios", relatorios); } catch {} }
+    relatorios = mergeArr(rr, relatorios); ls.setArr("relatorios", relatorios);
     const ri = await sb.get("rotina_items");
-    if (ri) { try { ITEMS = JSON.parse(ri); ls.setArr("rotina_items", ITEMS); } catch {} }
+    ITEMS = mergeArr(ri, ITEMS); ls.setArr("rotina_items", ITEMS);
     _lastSync = Date.now();
-    if (typeof loadToday === 'function') loadToday();
     if (typeof renderHist === 'function') renderHist();
     if (typeof renderCal === 'function') renderCal();
     if (typeof renderPensamentos === 'function') renderPensamentos();
+    if (typeof renderSaude === 'function') renderSaude();
+    if (typeof renderRecomp === 'function') renderRecomp();
     setStatus("Sincronizado - " + Object.keys(allData).length + " dias");
   } catch (e) {
     setStatus("Sem conexao - tentando de novo...");
@@ -2382,4 +2443,21 @@ window.addEventListener('online', () => autoResync());
 setInterval(() => { if (document.visibilityState === 'visible') autoResync(); }, 60000);
 </script>
 </body>
-</ht
+</html>
+ypeof renderRecomp === 'function') renderRecomp();
+    setStatus("Sincronizado - " + Object.keys(allData).length + " dias");
+  } catch (e) {
+    setStatus("Sem conexao - tentando de novo...");
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    if (Date.now() - _lastSync > 5000) autoResync();
+  }
+});
+window.addEventListener('online', () => autoResync());
+setInterval(() => { if (document.visibilityState === 'visible') autoResync(); }, 60000);
+</script>
+</body>
+</html>
