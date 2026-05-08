@@ -2,6 +2,9 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#C1694F">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -821,36 +824,47 @@ const ls = {
 // ── INIT ──
 async function init() {
   setStatus("🔄 Conectando...");
+  // Sempre carrega o cache local primeiro pra UI não ficar vazia
+  allData = ls.get();
   try {
-    // Test connection via proxy
-    const test = await fetch('/api/list/test_connection_check');
+    // Testa conexão via proxy (com timeout pra não travar a UI)
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 8000);
+    const test = await fetch('/api/list/test_connection_check', { signal: ctrl.signal });
+    clearTimeout(tid);
     if (!test.ok) throw new Error(`HTTP ${test.status}`);
     dbg("✓ Proxy OK");
 
     // Load all daily entries
     const rows = await sb.getAll("d:");
+    const cloudData = {};
     if (rows.length > 0) {
       rows.forEach(row => {
-        try { const e = JSON.parse(row.valor); allData[e.date] = e; } catch {}
+        try { const e = JSON.parse(row.valor); cloudData[e.date] = e; } catch {}
       });
     }
-    // Merge with localStorage (local wins if newer)
+    // Merge: nuvem é fonte de verdade; local só "ganha" se claramente mais novo
     const local = ls.get();
+    const merged = { ...cloudData };
     for (const [date, le] of Object.entries(local)) {
-      const ce = allData[date];
-      if (!ce || new Date(le.saved||0) > new Date(ce.saved||0)) {
-        allData[date] = le;
-        // Push newer local entry to cloud
-        await sb.set("d:"+date, JSON.stringify(le));
+      const ce = merged[date];
+      const lTime = new Date(le.saved||0).getTime();
+      const cTime = new Date(ce?.saved||0).getTime();
+      if (!ce || lTime > cTime) {
+        merged[date] = le;
+        // Sobe local mais novo pra nuvem
+        try { await sb.set("d:"+date, JSON.stringify(le)); } catch {}
       }
     }
+    allData = merged;
     ls.set(allData);
     useCloud = true;
     setStatus(`☁️ Sincronizado — ${Object.keys(allData).length} dias`);
   } catch(e) {
     console.error("Supabase init error:", e);
-    allData = ls.get();
     setStatus("⚠️ Offline — salvando localmente");
+    // Tenta de novo em 10s
+    setTimeout(() => { if (!useCloud) init(); }, 10000);
   }
 
   const rv = await sb.get("recompensas");
@@ -1237,7 +1251,11 @@ async function saveToday(){
   const xpE=activeItems.reduce((s,i)=>chk[i.id]?s+i.xp:s,0)+(allDone?30:0);
   prevLvl=getLevel(totalXP).n;calcXP();
   btn.disabled=false;btn.textContent="💾 Salvar registro do dia";
-  showToast("toast",`⭐ +${xpE} XP! ${ok?"☁️ Salvo na nuvem":"💾 Salvo localmente"}`,"ok");
+  if (ok) {
+    showToast("toast",`⭐ +${xpE} XP! ☁️ Salvo na nuvem`,"ok");
+  } else {
+    showToast("toast",`⚠️ Sem conexão — salvo só no aparelho. Tente sincronizar depois.`,"err");
+  }
 }
 
 // ── CALENDÁRIO ──
@@ -2272,17 +2290,81 @@ async function importarDados(){
 }
 
 init();
-if('serviceWorker' in navigator){
+
+// ── KILL-SWITCH: limpa service worker e caches antigas ──
+// Não registra nenhum service worker novo: o app roda 100% online.
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
       const regs = await navigator.serviceWorker.getRegistrations();
-      for(const reg of regs) await reg.unregister();
+      for (const reg of regs) {
+        try { await reg.unregister(); } catch {}
+      }
       const keys = await caches.keys();
-      for(const key of keys) await caches.delete(key);
-      navigator.serviceWorker.register('/sw.js').catch(()=>{});
-    } catch(e){}
+      for (const key of keys) {
+        try { await caches.delete(key); } catch {}
+      }
+    } catch (e) {}
   });
 }
+
+// ── AUTO-SYNC: re-puxa dados do servidor quando app volta ao foco ──
+let _lastSync = Date.now();
+async function autoResync(reason) {
+  if (!useCloud) return;
+  try {
+    const rows = await sb.getAll("d:");
+    if (rows && rows.length) {
+      rows.forEach(row => {
+        try {
+          const e = JSON.parse(row.valor);
+          const cur = allData[e.date];
+          // Se o servidor tem versão mais nova, substitui
+          if (!cur || new Date(e.saved||0) >= new Date(cur.saved||0)) {
+            allData[e.date] = e;
+          }
+        } catch {}
+      });
+      ls.set(allData);
+    }
+    // Recarrega listas auxiliares
+    const rv = await sb.get("recompensas");
+    if (rv) { try { recompensas = JSON.parse(rv); ls.setArr("rc", recompensas); } catch {} }
+    const rp = await sb.get("pensamentos");
+    if (rp) { try { pensamentos = JSON.parse(rp); ls.setArr("pensamentos", pensamentos); } catch {} }
+    const rs = await sb.get("saude");
+    if (rs) { try { saudeItems = JSON.parse(rs); ls.setArr("saude", saudeItems); } catch {} }
+    const rr = await sb.get("relatorios");
+    if (rr) { try { relatorios = JSON.parse(rr); ls.setArr("relatorios", relatorios); } catch {} }
+    const ri = await sb.get("rotina_items");
+    if (ri) { try { ITEMS = JSON.parse(ri); ls.setArr("rotina_items", ITEMS); } catch {} }
+
+    _lastSync = Date.now();
+    if (typeof loadToday === 'function') loadToday();
+    if (typeof renderHist === 'function') renderHist();
+    if (typeof renderCal === 'function') renderCal();
+    if (typeof renderPensamentos === 'function') renderPensamentos();
+    setStatus(`☁️ Sincronizado — ${Object.keys(allData).length} dias`);
+  } catch (e) {
+    setStatus("⚠️ Sem conexão — tentando de novo...");
+  }
+}
+
+// Re-sincroniza quando a aba volta a ficar visível (ex: voltar pro app no celular)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    // Só re-sincroniza se passou mais de 5s desde o último sync
+    if (Date.now() - _lastSync > 5000) autoResync('visibility');
+  }
+});
+
+// Re-sincroniza quando a conexão volta
+window.addEventListener('online', () => autoResync('online'));
+
+// Re-sincroniza periodicamente (a cada 60s) caso o app fique aberto
+setInterval(() => {
+  if (document.visibilityState === 'visible') autoResync('interval');
+}, 60000);
 </script>
 </body>
 </html>

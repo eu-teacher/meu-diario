@@ -8,8 +8,33 @@ const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 app.use(express.json({ limit: '2mb' }));
 
+// ── NO-CACHE para HTML, API e service worker ──
+// Garante que o app sempre puxe a versão mais nova e dados frescos
+app.use((req, res, next) => {
+  const p = req.path;
+  const noCache =
+    p === '/' ||
+    p.endsWith('.html') ||
+    p.startsWith('/api/') ||
+    p === '/sw.js' ||
+    p === '/manifest.json';
+  if (noCache) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
+
 // Arquivos estáticos na raiz do projeto
-app.use(express.static(__dirname));
+app.use(express.static(__dirname, {
+  setHeaders: (res, filePath) => {
+    // Ícones podem cachear, mas HTML/JS principais não
+    if (filePath.endsWith('.png') || filePath.endsWith('.jpg') || filePath.endsWith('.svg')) {
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+    }
+  }
+}));
 
 // ── PROXY para Supabase ──
 app.get('/api/get/:chave', async (req, res) => {
