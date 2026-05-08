@@ -749,7 +749,7 @@ let calY=new Date().getFullYear(), calM=new Date().getMonth();
 // ── STORAGE ──
 // ── SUPABASE ──
 // ── API PROXY (via Railway server) ──
-const APP_VERSION = "2026-05-08-v4"; // Mude isso a cada deploy pra confirmar versão
+const APP_VERSION = "2026-05-08-v5"; // Mude isso a cada deploy pra confirmar versão
 function dbg(m){ try{ console.log("[diario]", m); }catch{} }
 
 // fetch com timeout pra não travar a UI em rede ruim
@@ -2428,23 +2428,6 @@ async function autoResync() {
     if (typeof renderPensamentos === 'function') renderPensamentos();
     if (typeof renderSaude === 'function') renderSaude();
     if (typeof renderRecomp === 'function') renderRecomp();
-    setStatus("Sincronizado - " + Object.keys(allData).length + " dias");
-  } catch (e) {
-    setStatus("Sem conexao - tentando de novo...");
-  }
-}
-
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    if (Date.now() - _lastSync > 5000) autoResync();
-  }
-});
-window.addEventListener('online', () => autoResync());
-setInterval(() => { if (document.visibilityState === 'visible') autoResync(); }, 60000);
-</script>
-</body>
-</html>
-ypeof renderRecomp === 'function') renderRecomp();
     setStatus("Sincronizado - " + Object.keys(allData).length + " dias");
   } catch (e) {
     setStatus("Sem conexao - tentando de novo...");
