@@ -371,6 +371,23 @@ textarea:focus{border-color:#C1694F}
       </div>
     </div>
     <div id="dmList"></div>
+
+    <!-- REGISTRO AO LONGO DO DIA (dentro do modal) -->
+    <div style="height:1px;background:#F0D5CC;margin:14px 0"></div>
+    <div style="font-size:13px;color:#C1694F;font-weight:700;margin-bottom:3px">📍 Registros ao longo do dia</div>
+    <div style="font-size:11px;color:#A08070;margin-bottom:8px">Anote como estava se sentindo em momentos do dia</div>
+    <div class="card" style="margin-bottom:10px">
+      <div style="font-size:11px;color:#A08070;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Adicionar registro</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input type="number" id="dmLogMood" min="1" max="10" value="5" style="width:60px;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:18px;font-weight:700;text-align:center;outline:none;background:#FAF3E0;color:#C1694F">
+        <input id="dmLogHora" type="time" style="width:90px;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0;color:#8B5E52">
+        <input id="dmLogNota" placeholder="O que estava sentindo? O que aconteceu?" style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px 11px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0">
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px" id="dmLogEmoGrid"></div>
+      <button onclick="dmAdicionarLog()" style="width:100%;padding:11px;background:#8B5E52;color:#fff;border:none;border-radius:10px;font-family:Georgia,serif;font-size:12px;font-weight:700;cursor:pointer">+ Adicionar registro</button>
+    </div>
+    <div id="dmLogLista"></div>
+
     <div id="dmToast" class="toast"></div>
     <button class="btn" onclick="saveDay()">Salvar este dia ⭐</button>
   </div>
@@ -379,8 +396,8 @@ textarea:focus{border-color:#C1694F}
 <!-- BODY -->
 <div class="body">
 
-  <!-- HOJE -->
-  <div class="page on" id="pg-hoje">
+  <!-- CALENDÁRIO (tela principal) -->
+  <div class="page on" id="pg-cal">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
       <div class="sbar" id="syncStatus" style="flex:1;margin-bottom:0">🔄 Carregando...</div>
       <button onclick="forcSync()" style="background:#C1694F;border:none;border-radius:8px;color:#fff;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:Georgia,serif">🔄 Sync</button>
@@ -388,74 +405,10 @@ textarea:focus{border-color:#C1694F}
     </div>
     <div id="diagBox" style="display:none;background:#fff;border:1px solid #C1694F;border-radius:8px;padding:10px;margin-bottom:14px;font-size:11px;color:#2C2C2C;white-space:pre-wrap;font-family:monospace;max-height:300px;overflow:auto"></div>
     <div style="font-size:9px;color:#A08070;text-align:right;margin-bottom:8px" id="appVer"></div>
-    <div class="stitle">Como você está hoje?</div>
-    <div class="ssub">Cada hábito vale pontos de XP ⭐</div>
 
-    <!-- HUMOR GERAL -->
-    <div class="card">
-      <div class="mood-num" id="moodNum" style="color:#C1694F">5</div>
-      <div class="mood-lbl" id="moodLbl">Neutro</div>
-      <input type="range" min="1" max="10" value="5" id="moodSlider" oninput="setMood(this.value)">
-      <div class="scale"><span>1 — muito difícil</span><span>10 — ótima</span></div>
-    </div>
-
-    <!-- EMOÇÕES -->
-    <div style="margin-bottom:14px">
-      <div class="nlbl">Como você se sente? (pode marcar várias)</div>
-      <div id="emoGrid" style="display:flex;flex-wrap:wrap;gap:7px;margin-top:6px"></div>
-    </div>
-
-    <!-- MOTIVO -->
-    <div style="margin-bottom:14px">
-      <div class="nlbl">Por que você se sente assim?</div>
-      <textarea id="motivoArea" placeholder="Ex: dormi mal, discussão, dia produtivo, ansiedade com consulta..." oninput="saveDraft()"></textarea>
-    </div>
-
-    <!-- NOTA GERAL -->
-    <div style="margin-bottom:14px">
-      <div class="nlbl">Nota do dia (opcional)</div>
-      <textarea id="noteArea" placeholder="Algo mais que queira registrar sobre hoje?" oninput="saveDraft()"></textarea>
-    </div>
-
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div class="stitle">Rotina de hoje</div>
-      <span id="doneCount" style="font-size:13px;color:#C1694F;font-weight:700">0/9</span>
-    </div>
-    <div class="pbarW"><div class="pbar" id="pbar"></div></div>
-    <div class="plbl" id="pct" style="margin-bottom:2px">0% cumprido</div>
-
-    <!-- TOGGLE SEM AULA -->
-    <div onclick="toggleSemAula()" id="semAulaToggle" style="display:flex;align-items:center;gap:10px;background:#fff;border-radius:11px;padding:10px 13px;margin:10px 0 4px;cursor:pointer;border:1.5px solid #F0D5CC">
-      <span style="font-size:16px">📚</span>
-      <span style="font-size:13px;flex:1;color:#2C2C2C">Hoje não tenho aula</span>
-      <div id="semAulaSwitch" style="width:36px;height:20px;border-radius:10px;background:#F0D5CC;position:relative;transition:background .2s;flex-shrink:0">
-        <div id="semAulaKnob" style="width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></div>
-      </div>
-    </div>
-    <div id="checklist"></div>
-    <div id="toast" class="toast"></div>
-    <button class="btn" id="saveBtn" onclick="saveToday()">💾 Salvar registro do dia</button>
-
-    <!-- REGISTRO DE HUMOR AO LONGO DO DIA -->
-    <div style="height:1px;background:#F0D5CC;margin:18px 0"></div>
-    <div class="stitle" style="margin-bottom:3px">📍 Registro ao longo do dia</div>
-    <div class="ssub">Anote como está se sentindo agora — pode fazer várias vezes por dia</div>
-    <div class="card" style="margin-bottom:10px">
-      <div style="font-size:11px;color:#A08070;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Como você está agora?</div>
-      <div style="display:flex;gap:8px;margin-bottom:10px">
-        <input type="number" id="logMood" min="1" max="10" value="5" style="width:60px;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:18px;font-weight:700;text-align:center;outline:none;background:#FAF3E0;color:#C1694F">
-        <input id="logNota" placeholder="O que está sentindo? O que aconteceu?" style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px 11px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0">
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px" id="logEmoGrid"></div>
-      <button onclick="adicionarLog()" style="width:100%;padding:11px;background:#8B5E52;color:#fff;border:none;border-radius:10px;font-family:Georgia,serif;font-size:12px;font-weight:700;cursor:pointer">+ Registrar agora</button>
-    </div>
-    <div id="logLista"></div>
-  </div>
-
-  <!-- CALENDÁRIO -->
-  <div class="page" id="pg-cal">
     <div class="stitle">Calendário</div>
-    <div class="ssub">Toque em qualquer dia para editar</div>
+    <div class="ssub">Toque em qualquer dia para registrar</div>
+    <button onclick="abrirHoje()" style="width:100%;padding:11px;background:#C1694F;color:#fff;border:none;border-radius:10px;font-family:Georgia,serif;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:12px">☀️ Registrar hoje</button>
     <div class="cal-nav">
       <button class="cal-btn" onclick="navCal(-1)">‹</button>
       <div class="cal-label" id="calLabel"></div>
@@ -722,8 +675,7 @@ textarea:focus{border-color:#C1694F}
 
 <!-- BOTTOM NAV -->
 <nav class="nav">
-  <button class="nav-btn on" onclick="goTo('hoje',this)"><span class="nav-icon">☀️</span>Hoje</button>
-  <button class="nav-btn" onclick="goTo('cal',this)"><span class="nav-icon">📅</span>Cal.</button>
+  <button class="nav-btn on" onclick="goTo('cal',this)"><span class="nav-icon">📅</span>Calendário</button>
   <button class="nav-btn" onclick="goTo('resumo',this)"><span class="nav-icon">📊</span>Resumo</button>
   <button class="nav-btn" onclick="goTo('recomp',this)"><span class="nav-icon">🎁</span>Metas</button>
   <button class="nav-btn" onclick="goTo('mais',this)"><span class="nav-icon">⋯</span>Mais</button>
@@ -782,7 +734,7 @@ let calY=new Date().getFullYear(), calM=new Date().getMonth();
 // ── STORAGE ──
 // ── SUPABASE ──
 // ── API PROXY (via Railway server) ──
-const APP_VERSION = "2026-05-08-v2"; // Mude isso a cada deploy pra confirmar versão
+const APP_VERSION = "2026-05-08-v3-cal"; // Mude isso a cada deploy pra confirmar versão
 function dbg(m){ try{ console.log("[diario]", m); }catch{} }
 
 // fetch com timeout pra não travar a UI em rede ruim
@@ -1020,7 +972,6 @@ function goTo(name, el){
   if(pg)pg.classList.add("on");
   if(el)el.classList.add("on");
   else{
-    // highlight matching nav btn
     document.querySelectorAll(".nav-btn").forEach(b=>{
       if((b.getAttribute("onclick")||"").includes("'"+name+"'"))b.classList.add("on");
     });
@@ -1030,10 +981,14 @@ function goTo(name, el){
   if(name==="niveis")renderNiveis();
   if(name==="recomp")renderRecomp();
   if(name==="cal")renderCal();
-  if(name==="hoje")renderEmoGridMain();
   if(name==="rot")renderRotHabitos();
   if(name==="pensamentos")renderPensamentos();
   if(name==="saude")renderSaude();
+}
+
+// Atalho rápido pra abrir o modal do dia de hoje
+function abrirHoje(){
+  openDay(todayStr());
 }
 
 // ── MOOD ──
@@ -1188,164 +1143,19 @@ function clearDraft(){
   try{localStorage.removeItem(draftKey());}catch{}
 }
 
-function loadToday(){
-  const td=todayStr();
-  const saved=allData[td];
-  const draft=loadDraft();
-  const useDraft=draft&&(!saved||(draft.ts>(new Date(saved.saved||0).getTime())));
-  const src=useDraft?draft:saved;
-  if(src){
-    document.getElementById("moodSlider").value=src.mood||5;
-    setMood(src.mood||5);
-    chk=src.chk||{};
-    document.getElementById("noteArea").value=src.note||"";
-    document.getElementById("motivoArea").value=src.motivo||"";
-    selectedEmos=src.emocoes||[];
-    semAula=src.noClass||false;
-    const sw=document.getElementById("semAulaSwitch"),kn=document.getElementById("semAulaKnob");
-    if(sw){sw.style.background=semAula?"#C1694F":"#F0D5CC";kn.style.left=semAula?"18px":"2px";}
-    if(useDraft&&saved) showToast("toast","📝 Rascunho restaurado — lembre de salvar!","ok");
-  }
-  renderEmoGridMain();
-  buildChecklist();
-  renderLogEmoGrid();
-  renderLogLista();
-}
+// Função antiga - mantida como no-op pra compatibilidade
+function loadToday(){ /* página "Hoje" foi removida; tudo agora é via modal do calendário */ }
 
-// ── REGISTRO AO LONGO DO DIA ──
+// Funções antigas dos logs (página "Hoje" removida) — stubs pra não quebrar referências
 let logEmoSel=[];
+function renderLogEmoGrid(){}
+function toggleLogEmo(){}
+function renderLogLista(){}
+async function adicionarLog(){ /* removido — use dmAdicionarLog via modal */ }
+async function deletarLog(){ /* removido — use dmDeletarLog via modal */ }
 
-function renderLogEmoGrid(){
-  const el=document.getElementById("logEmoGrid");
-  if(!el)return;
-  el.innerHTML=EMOCOES.map(e=>{
-    const sel=logEmoSel.includes(e.id);
-    return`<div onclick="toggleLogEmo('${e.id}')" style="display:flex;align-items:center;gap:4px;padding:5px 9px;border-radius:18px;cursor:pointer;border:1.5px solid ${sel?e.cor:"#F0D5CC"};background:${sel?e.cor+"22":"#fff"};transition:all .15s">
-      <span style="font-size:13px">${e.e}</span>
-      <span style="font-size:10px;font-weight:700;color:${sel?e.cor:"#A08070"}">${e.l}</span>
-    </div>`;
-  }).join("");
-}
-
-function toggleLogEmo(id){
-  const idx=logEmoSel.indexOf(id);
-  if(idx>-1)logEmoSel.splice(idx,1);else logEmoSel.push(id);
-  renderLogEmoGrid();
-}
-
-async function adicionarLog(){
-  const td=todayStr();
-  const mood=parseInt(document.getElementById("logMood").value)||5;
-  const nota=document.getElementById("logNota").value.trim();
-  const now=new Date();
-  const hora=now.toTimeString().slice(0,5);
-  const log={id:"l_"+Date.now(),hora,mood,emocoes:[...logEmoSel],nota};
-
-  // Add to today's entry
-  if(!allData[td]) allData[td]={date:td,mood:5,emocoes:[],motivo:"",chk:{},note:"",noClass:false,logs:[],saved:new Date().toISOString()};
-  if(!allData[td].logs) allData[td].logs=[];
-  allData[td].logs.push(log);
-  allData[td].saved=new Date().toISOString();
-
-  ls.set(allData);
-  const ok=await sb.set("d:"+td,JSON.stringify(allData[td]));
-
-  // Reset form
-  document.getElementById("logNota").value="";
-  document.getElementById("logMood").value=5;
-  logEmoSel=[];
-  renderLogEmoGrid();
-  renderLogLista();
-  showToast("toast",`${ok?"☁️":"💾"} Registrado às ${hora}!`,"ok");
-}
-
-async function deletarLog(logId){
-  const td=todayStr();
-  if(!allData[td]?.logs)return;
-  allData[td].logs=allData[td].logs.filter(l=>l.id!==logId);
-  ls.set(allData);
-  await sb.set("d:"+td,JSON.stringify(allData[td]));
-  renderLogLista();
-}
-
-function renderLogLista(){
-  const td=todayStr();
-  const logs=(allData[td]?.logs||[]).slice().reverse();
-  const el=document.getElementById("logLista");
-  if(!el)return;
-  if(!logs.length){
-    el.innerHTML=`<div style="text-align:center;font-size:12px;color:#A08070;font-style:italic;padding:8px 0">Nenhum registro ainda hoje. Toque em "+ Registrar agora" quando quiser. 🧡</div>`;
-    return;
-  }
-  // Mini chart of mood through the day
-  const all=logs.slice().reverse();
-  const chartH=`<div style="background:#fff;border-radius:12px;padding:12px;margin-bottom:10px">
-    <div style="font-size:11px;color:#A08070;font-weight:700;text-transform:uppercase;margin-bottom:8px">Oscilação de humor hoje</div>
-    <div style="display:flex;align-items:flex-end;gap:4px;height:44px">
-      ${all.map(l=>{
-        const h=Math.round(l.mood/10*40);
-        return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
-          <div style="font-size:9px;color:#8B5E52;font-weight:700">${l.mood}</div>
-          <div style="width:100%;height:${h}px;background:${MCOL[l.mood]||"#C1694F"};border-radius:3px 3px 0 0;min-height:3px"></div>
-          <div style="font-size:8px;color:#A08070">${l.hora}</div>
-        </div>`;
-      }).join("")}
-    </div>
-  </div>`;
-
-  const items=logs.map(l=>{
-    const emos=l.emocoes.map(id=>EMOCOES.find(e=>e.id===id)?.e||"").join(" ");
-    return`<div style="background:#fff;border-radius:11px;padding:11px 13px;margin-bottom:7px;border-left:3px solid ${MCOL[l.mood]||"#C1694F"}">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:${l.nota||emos?"4px":"0"}">
-        <span style="font-size:16px;font-weight:700;color:${MCOL[l.mood]||"#C1694F"}">${l.mood}</span>
-        <span style="font-size:12px;color:#A08070">às ${l.hora}</span>
-        ${emos?`<span style="font-size:14px;margin-left:2px">${emos}</span>`:""}
-        <button onclick="deletarLog('${l.id}')" style="margin-left:auto;background:none;border:none;font-size:13px;cursor:pointer;color:#D4A89A">✕</button>
-      </div>
-      ${l.nota?`<div style="font-size:12px;color:#2C2C2C;font-style:italic">"${l.nota}"</div>`:""}
-    </div>`;
-  }).join("");
-
-  el.innerHTML = chartH + items;
-}
-
-// ── SAVE TODAY ──
-async function saveToday(){
-  try {
-    const btn=document.getElementById("saveBtn");
-    if(btn){btn.disabled=true;btn.textContent="Salvando...";}
-    const td=todayStr();
-    const mood=parseInt(document.getElementById("moodSlider").value)||5;
-    const note=document.getElementById("noteArea").value||"";
-    const motivo=document.getElementById("motivoArea").value||"";
-    const existingLogs=allData[td]?.logs||[];
-    const entry={date:td,mood,emocoes:[...selectedEmos],motivo,chk:{...chk},note,noClass:semAula,logs:existingLogs,saved:new Date().toISOString()};
-
-    // 1) Salva local IMEDIATAMENTE (não espera nuvem)
-    allData[td]=entry;
-    ls.set(allData);
-    clearDraft();
-
-    // 2) Calcula XP e mostra feedback NA HORA
-    const activeItems=semAula?ITEMS.filter(i=>i.id!=="nosc"):ITEMS;
-    const allDone=activeItems.every(i=>chk[i.id]);
-    const xpE=activeItems.reduce((s,i)=>chk[i.id]?s+i.xp:s,0)+(allDone?30:0);
-    prevLvl=getLevel(totalXP).n;calcXP();
-    if(btn){btn.disabled=false;btn.textContent="💾 Salvar registro do dia";}
-    showToast("toast",`⭐ +${xpE} XP! 💾 Salvo`,"ok");
-
-    // 3) Tenta nuvem em background (sem travar a UI)
-    sb.set("d:"+td,JSON.stringify(entry)).then(ok=>{
-      if(ok){setStatus(`☁️ Sincronizado — ${Object.keys(allData).length} dias`);}
-      else{setStatus("⚠️ Salvo só no aparelho — sem conexão");}
-    }).catch(()=>{setStatus("⚠️ Salvo só no aparelho — sem conexão");});
-  } catch(err) {
-    console.error("saveToday erro:",err);
-    const btn=document.getElementById("saveBtn");
-    if(btn){btn.disabled=false;btn.textContent="💾 Salvar registro do dia";}
-    showToast("toast","❌ Erro ao salvar: "+(err.message||err),"err");
-  }
-}
+// Função antiga - agora redireciona pro modal
+async function saveToday(){ openDay(todayStr()); }
 
 // ── CALENDÁRIO ──
 function navCal(d){calM+=d;if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;}renderCal();}
@@ -1385,6 +1195,22 @@ function openDay(ds){
   sw.style.background=dmSemAula?"#C1694F":"#F0D5CC";kn.style.left=dmSemAula?"18px":"2px";
   renderEmoGridDm();
   buildDmList();document.getElementById("dmToast").style.display="none";
+  // Reset do form de registros do dia + render
+  dmLogEmoSel=[];
+  const lm=document.getElementById("dmLogMood");if(lm)lm.value=5;
+  const ln=document.getElementById("dmLogNota");if(ln)ln.value="";
+  const lh=document.getElementById("dmLogHora");
+  if(lh){
+    // Hoje: pré-preenche com hora atual; passado: deixa vazio
+    if(ds===todayStr()){
+      const now=new Date();
+      lh.value=now.toTimeString().slice(0,5);
+    } else {
+      lh.value="";
+    }
+  }
+  renderDmLogEmoGrid();
+  renderDmLogLista();
   document.getElementById("dayModal").classList.add("show");
   document.getElementById("dayModal").scrollTop=0;
 }
@@ -1426,15 +1252,135 @@ function dmToggle(id){
   if(dmChk[id]){ci.classList.add("on");cb.textContent="✓";}else{ci.classList.remove("on");cb.textContent="";}
 }
 async function saveDay(){
-  const mood=parseInt(document.getElementById("dmSlider").value);
-  const note=document.getElementById("dmNote").value;
-  const motivo=document.getElementById("dmMotivo").value;
-  const entry={date:dmDate,mood,emocoes:[...dmEmos],motivo,chk:{...dmChk},note,noClass:dmSemAula,saved:new Date().toISOString()};
-  allData[dmDate]=entry;ls.set(allData);
-  await sb.set("d:"+dmDate,JSON.stringify(entry));
-  prevLvl=getLevel(totalXP).n;calcXP();renderCal();
-  showToast("dmToast","✓ Salvo! ⭐","ok");
-  setTimeout(closeDay,1600);
+  try {
+    const mood=parseInt(document.getElementById("dmSlider").value)||5;
+    const note=document.getElementById("dmNote").value||"";
+    const motivo=document.getElementById("dmMotivo").value||"";
+    // Preserva os logs intra-day já existentes
+    const existingLogs=allData[dmDate]?.logs||[];
+    const entry={date:dmDate,mood,emocoes:[...dmEmos],motivo,chk:{...dmChk},note,noClass:dmSemAula,logs:existingLogs,saved:new Date().toISOString()};
+    allData[dmDate]=entry;ls.set(allData);
+    prevLvl=getLevel(totalXP).n;calcXP();renderCal();
+    showToast("dmToast","✓ Salvo! ⭐","ok");
+    // Sobe pra nuvem em background
+    sb.set("d:"+dmDate,JSON.stringify(entry)).then(ok=>{
+      if(ok){setStatus("☁️ Sincronizado - "+Object.keys(allData).length+" dias");}
+      else{setStatus("⚠️ Salvo só no aparelho - sem conexão");}
+    }).catch(()=>setStatus("⚠️ Salvo só no aparelho - sem conexão"));
+    setTimeout(closeDay,1200);
+  } catch(err) {
+    console.error("saveDay err:",err);
+    showToast("dmToast","❌ Erro ao salvar: "+(err.message||err),"err");
+  }
+}
+
+// ── REGISTROS AO LONGO DO DIA (dentro do modal de qualquer dia) ──
+let dmLogEmoSel=[];
+
+function renderDmLogEmoGrid(){
+  const el=document.getElementById("dmLogEmoGrid");
+  if(!el)return;
+  el.innerHTML=EMOCOES.map(e=>{
+    const sel=dmLogEmoSel.includes(e.id);
+    return`<div onclick="toggleDmLogEmo('${e.id}')" style="display:flex;align-items:center;gap:4px;padding:5px 9px;border-radius:18px;cursor:pointer;border:1.5px solid ${sel?e.cor:"#F0D5CC"};background:${sel?e.cor+"22":"#fff"};transition:all .15s">
+      <span style="font-size:13px">${e.e}</span>
+      <span style="font-size:10px;font-weight:700;color:${sel?e.cor:"#A08070"}">${e.l}</span>
+    </div>`;
+  }).join("");
+}
+
+function toggleDmLogEmo(id){
+  const idx=dmLogEmoSel.indexOf(id);
+  if(idx>-1)dmLogEmoSel.splice(idx,1);else dmLogEmoSel.push(id);
+  renderDmLogEmoGrid();
+}
+
+async function dmAdicionarLog(){
+  if(!dmDate)return;
+  const mood=parseInt(document.getElementById("dmLogMood").value)||5;
+  const nota=document.getElementById("dmLogNota").value.trim();
+  let hora=document.getElementById("dmLogHora").value;
+  if(!hora){
+    if(dmDate===todayStr()){
+      hora=new Date().toTimeString().slice(0,5);
+    } else {
+      showToast("dmToast","⚠️ Defina a hora do registro","err");
+      return;
+    }
+  }
+  const log={id:"l_"+Date.now(),hora,mood,emocoes:[...dmLogEmoSel],nota};
+
+  if(!allData[dmDate]){
+    allData[dmDate]={date:dmDate,mood:5,emocoes:[],motivo:"",chk:{},note:"",noClass:false,logs:[],saved:new Date().toISOString()};
+  }
+  if(!allData[dmDate].logs) allData[dmDate].logs=[];
+  // ordena por hora pra manter a sequência cronológica certa
+  allData[dmDate].logs.push(log);
+  allData[dmDate].logs.sort((a,b)=>(a.hora||"").localeCompare(b.hora||""));
+  allData[dmDate].saved=new Date().toISOString();
+  ls.set(allData);
+
+  document.getElementById("dmLogNota").value="";
+  document.getElementById("dmLogMood").value=5;
+  if(dmDate===todayStr()){
+    document.getElementById("dmLogHora").value=new Date().toTimeString().slice(0,5);
+  }
+  dmLogEmoSel=[];
+  renderDmLogEmoGrid();
+  renderDmLogLista();
+  renderCal();
+
+  showToast("dmToast","💾 Registrado às "+hora,"ok");
+  sb.set("d:"+dmDate,JSON.stringify(allData[dmDate])).then(ok=>{
+    if(ok)setStatus("☁️ Sincronizado - "+Object.keys(allData).length+" dias");
+  }).catch(()=>{});
+}
+
+async function dmDeletarLog(logId){
+  if(!dmDate||!allData[dmDate]?.logs)return;
+  allData[dmDate].logs=allData[dmDate].logs.filter(l=>l.id!==logId);
+  allData[dmDate].saved=new Date().toISOString();
+  ls.set(allData);
+  renderDmLogLista();
+  renderCal();
+  sb.set("d:"+dmDate,JSON.stringify(allData[dmDate])).catch(()=>{});
+}
+
+function renderDmLogLista(){
+  if(!dmDate)return;
+  const el=document.getElementById("dmLogLista");
+  if(!el)return;
+  const logs=(allData[dmDate]?.logs||[]).slice().sort((a,b)=>(a.hora||"").localeCompare(b.hora||""));
+  if(!logs.length){
+    el.innerHTML=`<div style="text-align:center;font-size:12px;color:#A08070;font-style:italic;padding:8px 0">Nenhum registro nesse dia. Use o formulário acima pra adicionar. 🧡</div>`;
+    return;
+  }
+  const chartH=`<div style="background:#fff;border-radius:12px;padding:12px;margin-bottom:10px">
+    <div style="font-size:11px;color:#A08070;font-weight:700;text-transform:uppercase;margin-bottom:8px">Oscilação de humor</div>
+    <div style="display:flex;align-items:flex-end;gap:4px;height:44px">
+      ${logs.map(l=>{
+        const h=Math.round(l.mood/10*40);
+        return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div style="font-size:9px;color:#8B5E52;font-weight:700">${l.mood}</div>
+          <div style="width:100%;height:${h}px;background:${MCOL[l.mood]||"#C1694F"};border-radius:3px 3px 0 0;min-height:3px"></div>
+          <div style="font-size:8px;color:#A08070">${l.hora}</div>
+        </div>`;
+      }).join("")}
+    </div>
+  </div>`;
+  const items=logs.slice().reverse().map(l=>{
+    const emos=l.emocoes.map(id=>EMOCOES.find(e=>e.id===id)?.e||"").join(" ");
+    return`<div style="background:#fff;border-radius:11px;padding:11px 13px;margin-bottom:7px;border-left:3px solid ${MCOL[l.mood]||"#C1694F"}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:${l.nota||emos?"4px":"0"}">
+        <span style="font-size:16px;font-weight:700;color:${MCOL[l.mood]||"#C1694F"}">${l.mood}</span>
+        <span style="font-size:12px;color:#A08070">às ${l.hora}</span>
+        ${emos?`<span style="font-size:14px;margin-left:2px">${emos}</span>`:""}
+        <button onclick="dmDeletarLog('${l.id}')" style="margin-left:auto;background:none;border:none;font-size:13px;cursor:pointer;color:#D4A89A">✕</button>
+      </div>
+      ${l.nota?`<div style="font-size:12px;color:#2C2C2C;font-style:italic">"${l.nota}"</div>`:""}
+    </div>`;
+  }).join("");
+  el.innerHTML=chartH+items;
 }
 
 // ── HISTÓRICO ──
@@ -2436,4 +2382,4 @@ window.addEventListener('online', () => autoResync());
 setInterval(() => { if (document.visibilityState === 'visible') autoResync(); }, 60000);
 </script>
 </body>
-</html>
+</ht
