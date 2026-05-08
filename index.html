@@ -425,7 +425,22 @@ textarea:focus{border-color:#C1694F}
     </div>
     <div id="checklist"></div>
     <div id="toast" class="toast"></div>
-    <button class="btn" id="saveBtn" onclick="saveToday()">Salvar e ganhar XP ⭐</button>
+    <button class="btn" id="saveBtn" onclick="saveToday()">💾 Salvar registro do dia</button>
+
+    <!-- REGISTRO DE HUMOR AO LONGO DO DIA -->
+    <div style="height:1px;background:#F0D5CC;margin:18px 0"></div>
+    <div class="stitle" style="margin-bottom:3px">📍 Registro ao longo do dia</div>
+    <div class="ssub">Anote como está se sentindo agora — pode fazer várias vezes por dia</div>
+    <div class="card" style="margin-bottom:10px">
+      <div style="font-size:11px;color:#A08070;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Como você está agora?</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input type="number" id="logMood" min="1" max="10" value="5" style="width:60px;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px;font-family:Georgia,serif;font-size:18px;font-weight:700;text-align:center;outline:none;background:#FAF3E0;color:#C1694F">
+        <input id="logNota" placeholder="O que está sentindo? O que aconteceu?" style="flex:1;border:1.5px solid #F0D5CC;border-radius:9px;padding:8px 11px;font-family:Georgia,serif;font-size:13px;outline:none;background:#FAF3E0">
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px" id="logEmoGrid"></div>
+      <button onclick="adicionarLog()" style="width:100%;padding:11px;background:#8B5E52;color:#fff;border:none;border-radius:10px;font-family:Georgia,serif;font-size:12px;font-weight:700;cursor:pointer">+ Registrar agora</button>
+    </div>
+    <div id="logLista"></div>
   </div>
 
   <!-- CALENDÁRIO -->
@@ -1066,11 +1081,8 @@ function loadToday(){
   const td=todayStr();
   const saved=allData[td];
   const draft=loadDraft();
-
-  // Use draft if it's newer than saved, or if no saved entry
   const useDraft=draft&&(!saved||(draft.ts>(new Date(saved.saved||0).getTime())));
   const src=useDraft?draft:saved;
-
   if(src){
     document.getElementById("moodSlider").value=src.mood||5;
     setMood(src.mood||5);
@@ -1081,13 +1093,109 @@ function loadToday(){
     semAula=src.noClass||false;
     const sw=document.getElementById("semAulaSwitch"),kn=document.getElementById("semAulaKnob");
     if(sw){sw.style.background=semAula?"#C1694F":"#F0D5CC";kn.style.left=semAula?"18px":"2px";}
-    if(useDraft&&saved){
-      // show indicator that draft was restored
-      showToast("toast","📝 Rascunho restaurado — não esqueça de salvar!","ok");
-    }
+    if(useDraft&&saved) showToast("toast","📝 Rascunho restaurado — lembre de salvar!","ok");
   }
   renderEmoGridMain();
   buildChecklist();
+  renderLogEmoGrid();
+  renderLogLista();
+}
+
+// ── REGISTRO AO LONGO DO DIA ──
+let logEmoSel=[];
+
+function renderLogEmoGrid(){
+  const el=document.getElementById("logEmoGrid");
+  if(!el)return;
+  el.innerHTML=EMOCOES.map(e=>{
+    const sel=logEmoSel.includes(e.id);
+    return`<div onclick="toggleLogEmo('${e.id}')" style="display:flex;align-items:center;gap:4px;padding:5px 9px;border-radius:18px;cursor:pointer;border:1.5px solid ${sel?e.cor:"#F0D5CC"};background:${sel?e.cor+"22":"#fff"};transition:all .15s">
+      <span style="font-size:13px">${e.e}</span>
+      <span style="font-size:10px;font-weight:700;color:${sel?e.cor:"#A08070"}">${e.l}</span>
+    </div>`;
+  }).join("");
+}
+
+function toggleLogEmo(id){
+  const idx=logEmoSel.indexOf(id);
+  if(idx>-1)logEmoSel.splice(idx,1);else logEmoSel.push(id);
+  renderLogEmoGrid();
+}
+
+async function adicionarLog(){
+  const td=todayStr();
+  const mood=parseInt(document.getElementById("logMood").value)||5;
+  const nota=document.getElementById("logNota").value.trim();
+  const now=new Date();
+  const hora=now.toTimeString().slice(0,5);
+  const log={id:"l_"+Date.now(),hora,mood,emocoes:[...logEmoSel],nota};
+
+  // Add to today's entry
+  if(!allData[td]) allData[td]={date:td,mood:5,emocoes:[],motivo:"",chk:{},note:"",noClass:false,logs:[],saved:new Date().toISOString()};
+  if(!allData[td].logs) allData[td].logs=[];
+  allData[td].logs.push(log);
+  allData[td].saved=new Date().toISOString();
+
+  ls.set(allData);
+  const ok=await sb.set("d:"+td,JSON.stringify(allData[td]));
+
+  // Reset form
+  document.getElementById("logNota").value="";
+  document.getElementById("logMood").value=5;
+  logEmoSel=[];
+  renderLogEmoGrid();
+  renderLogLista();
+  showToast("toast",`${ok?"☁️":"💾"} Registrado às ${hora}!`,"ok");
+}
+
+async function deletarLog(logId){
+  const td=todayStr();
+  if(!allData[td]?.logs)return;
+  allData[td].logs=allData[td].logs.filter(l=>l.id!==logId);
+  ls.set(allData);
+  await sb.set("d:"+td,JSON.stringify(allData[td]));
+  renderLogLista();
+}
+
+function renderLogLista(){
+  const td=todayStr();
+  const logs=(allData[td]?.logs||[]).slice().reverse();
+  const el=document.getElementById("logLista");
+  if(!el)return;
+  if(!logs.length){
+    el.innerHTML=`<div style="text-align:center;font-size:12px;color:#A08070;font-style:italic;padding:8px 0">Nenhum registro ainda hoje. Toque em "+ Registrar agora" quando quiser. 🧡</div>`;
+    return;
+  }
+  // Mini chart of mood through the day
+  const all=logs.slice().reverse();
+  const chartH=`<div style="background:#fff;border-radius:12px;padding:12px;margin-bottom:10px">
+    <div style="font-size:11px;color:#A08070;font-weight:700;text-transform:uppercase;margin-bottom:8px">Oscilação de humor hoje</div>
+    <div style="display:flex;align-items:flex-end;gap:4px;height:44px">
+      ${all.map(l=>{
+        const h=Math.round(l.mood/10*40);
+        return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div style="font-size:9px;color:#8B5E52;font-weight:700">${l.mood}</div>
+          <div style="width:100%;height:${h}px;background:${MCOL[l.mood]||"#C1694F"};border-radius:3px 3px 0 0;min-height:3px"></div>
+          <div style="font-size:8px;color:#A08070">${l.hora}</div>
+        </div>`;
+      }).join("")}
+    </div>
+  </div>`;
+
+  const items=logs.map(l=>{
+    const emos=l.emocoes.map(id=>EMOCOES.find(e=>e.id===id)?.e||"").join(" ");
+    return`<div style="background:#fff;border-radius:11px;padding:11px 13px;margin-bottom:7px;border-left:3px solid ${MCOL[l.mood]||"#C1694F"}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:${l.nota||emos?"4px":"0"}">
+        <span style="font-size:16px;font-weight:700;color:${MCOL[l.mood]||"#C1694F"}">${l.mood}</span>
+        <span style="font-size:12px;color:#A08070">às ${l.hora}</span>
+        ${emos?`<span style="font-size:14px;margin-left:2px">${emos}</span>`:""}
+        <button onclick="deletarLog('${l.id}')" style="margin-left:auto;background:none;border:none;font-size:13px;cursor:pointer;color:#D4A89A">✕</button>
+      </div>
+      ${l.nota?`<div style="font-size:12px;color:#2C2C2C;font-style:italic">"${l.nota}"</div>`:""}
+    </div>`;
+  }).join("");
+
+  el.innerHTML = chartH + items;
 }
 
 // ── SAVE TODAY ──
@@ -1096,17 +1204,19 @@ async function saveToday(){
   btn.disabled=true;btn.textContent="Salvando...";
   const td=todayStr(),mood=parseInt(document.getElementById("moodSlider").value),note=document.getElementById("noteArea").value;
   const motivo=document.getElementById("motivoArea").value;
-  const entry={date:td,mood,emocoes:[...selectedEmos],motivo,chk:{...chk},note,noClass:semAula,saved:new Date().toISOString()};
-  allData[td]=entry;ls.set(allData);
-  clearDraft(); // draft confirmed, clear it
-  let ok=true;
-  ok=await sb.set("d:"+td,JSON.stringify(entry));
+  // Preserve existing logs
+  const existingLogs=allData[td]?.logs||[];
+  const entry={date:td,mood,emocoes:[...selectedEmos],motivo,chk:{...chk},note,noClass:semAula,logs:existingLogs,saved:new Date().toISOString()};
+  allData[td]=entry;
+  ls.set(allData);
+  clearDraft();
+  const ok=await sb.set("d:"+td,JSON.stringify(entry));
   const activeItems=semAula?ITEMS.filter(i=>i.id!=="nosc"):ITEMS;
   const allDone=activeItems.every(i=>chk[i.id]);
   const xpE=activeItems.reduce((s,i)=>chk[i.id]?s+i.xp:s,0)+(allDone?30:0);
   prevLvl=getLevel(totalXP).n;calcXP();
-  btn.disabled=false;btn.textContent="Salvar e ganhar XP ⭐";
-  showToast("toast",`⭐ +${xpE} XP! ${ok&&useCloud?"☁️ Salvo na nuvem":"💾 Salvo localmente"}`,"ok");
+  btn.disabled=false;btn.textContent="💾 Salvar registro do dia";
+  showToast("toast",`⭐ +${xpE} XP! ${ok?"☁️ Salvo na nuvem":"💾 Salvo localmente"}`,"ok");
 }
 
 // ── CALENDÁRIO ──
@@ -1220,7 +1330,18 @@ function renderHist(){
     const done=ITEMS.filter(i=>e.chk?.[i.id]).length,p=Math.round(done/ITEMS.length*100);
     const xpE=ITEMS.reduce((s,i)=>e.chk?.[i.id]?s+i.xp:s,0)+(ITEMS.every(i=>e.chk?.[i.id])?30:0);
     const icons=ITEMS.map(i=>`<span style="font-size:14px;opacity:${e.chk?.[i.id]?1:.2}">${i.i}</span>`).join("");
-    h+=`<div class="hentry"><div class="hhdr"><div class="hdate">${fmtD(e.date)}</div><div style="display:flex;align-items:center;gap:7px"><div class="hmood" style="color:${MCOL[e.mood]||"#C1694F"}">${e.mood}<span style="font-size:10px;color:#A08070;font-weight:300">/10</span></div><span style="font-size:10px;background:#F0D5CC;color:#8B5E52;padding:2px 6px;border-radius:7px;font-weight:700">⭐${xpE}</span></div></div><div style="background:#F0D5CC;border-radius:4px;height:4px;overflow:hidden"><div style="height:100%;background:#C1694F;width:${p}%"></div></div><div style="font-size:10px;color:#A08070;margin-top:2px">${p}% da rotina</div><div class="hicons">${icons}</div>${e.note?`<div class="hnote">"${e.note}"</div>`:""}</div>`;
+    // Intra-day logs mini chart
+    const logs=e.logs||[];
+    const logsHtml=logs.length?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid #F0D5CC">
+      <div style="font-size:10px;color:#A08070;margin-bottom:5px;font-weight:700">OSCILAÇÃO DO DIA (${logs.length} registros)</div>
+      <div style="display:flex;align-items:flex-end;gap:3px;height:30px">
+        ${logs.map(l=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px">
+          <div style="width:100%;height:${Math.round(l.mood/10*26)}px;background:${MCOL[l.mood]||"#C1694F"};border-radius:2px 2px 0 0;min-height:2px"></div>
+          <div style="font-size:7px;color:#A08070">${l.hora}</div>
+        </div>`).join("")}
+      </div>
+    </div>`:"";
+    h+=`<div class="hentry"><div class="hhdr"><div class="hdate">${fmtD(e.date)}</div><div style="display:flex;align-items:center;gap:7px"><div class="hmood" style="color:${MCOL[e.mood]||"#C1694F"}">${e.mood}<span style="font-size:10px;color:#A08070;font-weight:300">/10</span></div><span style="font-size:10px;background:#F0D5CC;color:#8B5E52;padding:2px 6px;border-radius:7px;font-weight:700">⭐${xpE}</span></div></div><div style="background:#F0D5CC;border-radius:4px;height:4px;overflow:hidden"><div style="height:100%;background:#C1694F;width:${p}%"></div></div><div style="font-size:10px;color:#A08070;margin-top:2px">${p}% da rotina</div><div class="hicons">${icons}</div>${e.note?`<div class="hnote">"${e.note}"</div>`:""}${logsHtml}</div>`;
   });
   document.getElementById("histContent").innerHTML=h;
 }
