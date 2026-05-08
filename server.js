@@ -7,7 +7,9 @@ const SB_URL = "https://yevzrkpmuwhydvuurbds.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlldnpya3BtdXdoeWR2dXVyYmRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMDM2MjIsImV4cCI6MjA5MzY3OTYyMn0.d5_2tTTop9gbKefTjBl-2mqCbtb6PjXxOYoIA8oJuK0";
 
 app.use(express.json({ limit: '2mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+
+// Arquivos estáticos na raiz do projeto
+app.use(express.static(__dirname));
 
 // ── PROXY para Supabase ──
 app.get('/api/get/:chave', async (req, res) => {
@@ -72,8 +74,9 @@ app.delete('/api/del/:chave', async (req, res) => {
   }
 });
 
+// Todas as rotas retornam index.html
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
