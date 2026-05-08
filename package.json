@@ -2,9 +2,9 @@
   "name": "meu-diario",
   "version": "1.0.0",
   "scripts": {
-    "start": "serve . --listen $PORT"
+    "start": "node server.js"
   },
   "dependencies": {
-    "serve": "^14.2.1"
+    "express": "^4.18.2"
   }
 }
