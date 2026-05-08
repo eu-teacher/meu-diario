@@ -378,7 +378,10 @@ textarea:focus{border-color:#C1694F}
 
   <!-- HOJE -->
   <div class="page on" id="pg-hoje">
-    <div class="sbar" id="syncStatus">🔄 Carregando...</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <div class="sbar" id="syncStatus" style="flex:1;margin-bottom:0">🔄 Carregando...</div>
+      <button onclick="forcSync()" style="background:#C1694F;border:none;border-radius:8px;color:#fff;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:Georgia,serif">🔄 Sync</button>
+    </div>
     <div class="stitle">Como você está hoje?</div>
     <div class="ssub">Cada hábito vale pontos de XP ⭐</div>
 
@@ -781,25 +784,40 @@ const sb = {
       const r = await fetch(`${SB_URL}/rest/v1/registros?chave=eq.${encodeURIComponent(chave)}&select=valor`, {
         headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }
       });
+      if (!r.ok) return null;
       const data = await r.json();
       return data?.[0]?.valor || null;
     } catch { return null; }
   },
   async set(chave, valor) {
     try {
-      await fetch(`${SB_URL}/rest/v1/registros`, {
+      const r = await fetch(`${SB_URL}/rest/v1/registros`, {
         method: "POST",
-        headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates" },
+        headers: {
+          apikey: SB_KEY,
+          Authorization: `Bearer ${SB_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "resolution=merge-duplicates,return=minimal"
+        },
         body: JSON.stringify({ chave, valor, atualizado_em: new Date().toISOString() })
       });
+      if (!r.ok) {
+        const err = await r.text();
+        console.error("Supabase set error:", r.status, err);
+        return false;
+      }
       return true;
-    } catch { return false; }
+    } catch(e) {
+      console.error("Supabase set exception:", e);
+      return false;
+    }
   },
   async getAll(prefix) {
     try {
-      const r = await fetch(`${SB_URL}/rest/v1/registros?chave=like.${encodeURIComponent(prefix + "%")}&select=chave,valor`, {
+      const r = await fetch(`${SB_URL}/rest/v1/registros?chave=like.${encodeURIComponent(prefix + "%")}&select=chave,valor&limit=1000`, {
         headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }
       });
+      if (!r.ok) return [];
       return await r.json();
     } catch { return []; }
   },
@@ -822,35 +840,40 @@ const ls = {
 
 // ── INIT ──
 async function init() {
-  setStatus("🔄 Conectando ao Supabase...");
+  setStatus("🔄 Conectando...");
   try {
+    // Test connection first
+    const test = await fetch(`${SB_URL}/rest/v1/registros?limit=1`, {
+      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }
+    });
+    if (!test.ok) throw new Error(`HTTP ${test.status}`);
+
     // Load all daily entries
     const rows = await sb.getAll("d:");
     if (rows.length > 0) {
       rows.forEach(row => {
         try { const e = JSON.parse(row.valor); allData[e.date] = e; } catch {}
       });
-      // Merge with localStorage
-      allData = { ...ls.get(), ...allData };
-      ls.set(allData);
-      useCloud = true;
-      setStatus("☁️ Sincronizado");
-    } else {
-      // No cloud data — try localStorage
-      allData = ls.get();
-      // Push localStorage to cloud
-      for (const [date, e] of Object.entries(allData)) {
-        await sb.set("d:" + date, JSON.stringify(e));
-      }
-      useCloud = true;
-      setStatus("☁️ Sincronizado");
     }
-  } catch {
+    // Merge with localStorage (local wins if newer)
+    const local = ls.get();
+    for (const [date, le] of Object.entries(local)) {
+      const ce = allData[date];
+      if (!ce || new Date(le.saved||0) > new Date(ce.saved||0)) {
+        allData[date] = le;
+        // Push newer local entry to cloud
+        await sb.set("d:"+date, JSON.stringify(le));
+      }
+    }
+    ls.set(allData);
+    useCloud = true;
+    setStatus(`☁️ Sincronizado — ${Object.keys(allData).length} dias`);
+  } catch(e) {
+    console.error("Supabase init error:", e);
     allData = ls.get();
-    setStatus("💾 Salvo localmente");
+    setStatus("⚠️ Offline — salvando localmente");
   }
 
-  // Load other data from Supabase
   const rv = await sb.get("recompensas");
   if (rv) { try { recompensas = JSON.parse(rv) } catch {} }
   if (!recompensas.length) recompensas = ls.getArr("rc");
@@ -871,6 +894,25 @@ async function init() {
 }
 
 function setStatus(m){const s=document.getElementById("syncStatus");if(s)s.textContent=m;}
+
+async function forcSync(){
+  setStatus("🔄 Sincronizando...");
+  try {
+    const rows = await sb.getAll("d:");
+    if (rows.length > 0) {
+      rows.forEach(row => {
+        try { const e = JSON.parse(row.valor); allData[e.date] = e; } catch {}
+      });
+      ls.set(allData);
+    }
+    setStatus(`☁️ Sincronizado — ${Object.keys(allData).length} dias`);
+    loadToday();
+    showToast("toast","✓ Dados atualizados!","ok");
+  } catch(e) {
+    setStatus("⚠️ Erro ao sincronizar");
+    showToast("toast","Erro de conexão. Tente novamente.","err");
+  }
+}
 function todayStr(){return new Date().toISOString().split("T")[0];}
 function fmtD(s){const[,m,d]=s.split("-");const ms=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];return`${parseInt(d)} de ${ms[parseInt(m)-1]}`;}
 
