@@ -2,12 +2,6 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#C1694F">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Meu Diário">
-<link rel="apple-touch-icon" href="/icon-192.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Meu Diário</title>
 <style>
@@ -2293,10 +2287,15 @@ async function importarDados(){
 }
 
 init();
-
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  window.addEventListener('load', async () => {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for(const reg of regs) await reg.unregister();
+      const keys = await caches.keys();
+      for(const key of keys) await caches.delete(key);
+      navigator.serviceWorker.register('/sw.js').catch(()=>{});
+    } catch(e){}
   });
 }
 </script>
