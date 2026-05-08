@@ -8,8 +8,7 @@ const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 app.use(express.json({ limit: '2mb' }));
 
-// ── NO-CACHE para HTML, API e service worker ──
-// Garante que o app sempre puxe a versão mais nova e dados frescos
+// NO-CACHE para HTML, API e service worker
 app.use((req, res, next) => {
   const p = req.path;
   const noCache =
@@ -26,26 +25,26 @@ app.use((req, res, next) => {
   next();
 });
 
-// Arquivos estáticos na raiz do projeto
 app.use(express.static(__dirname, {
   setHeaders: (res, filePath) => {
-    // Ícones podem cachear, mas HTML/JS principais não
     if (filePath.endsWith('.png') || filePath.endsWith('.jpg') || filePath.endsWith('.svg')) {
       res.setHeader('Cache-Control', 'public, max-age=86400');
     }
   }
 }));
 
-// ── PROXY para Supabase ──
+// PROXY para Supabase
 app.get('/api/get/:chave', async (req, res) => {
   try {
     const chave = decodeURIComponent(req.params.chave);
     const r = await fetch(`${SB_URL}/rest/v1/registros?chave=eq.${encodeURIComponent(chave)}&select=valor`, {
       headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }
     });
-    const data = await r.json();
+    const txt = await r.text();
+    if (!r.ok) return res.status(r.status).type('json').send(txt);
+    let data; try { data = JSON.parse(txt); } catch { data = []; }
     res.json({ valor: data?.[0]?.valor || null });
-  } catch(e) {
+  } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
@@ -68,7 +67,7 @@ app.post('/api/set', async (req, res) => {
       return res.status(r.status).json({ error: err });
     }
     res.json({ ok: true });
-  } catch(e) {
+  } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
@@ -79,9 +78,10 @@ app.get('/api/list/:prefix', async (req, res) => {
     const r = await fetch(`${SB_URL}/rest/v1/registros?chave=like.${encodeURIComponent(prefix + '%')}&select=chave,valor&limit=1000`, {
       headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }
     });
-    const data = await r.json();
-    res.json(data);
-  } catch(e) {
+    const txt = await r.text();
+    if (!r.ok) return res.status(r.status).type('json').send(txt);
+    res.type('json').send(txt);
+  } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
@@ -94,16 +94,15 @@ app.delete('/api/del/:chave', async (req, res) => {
       headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }
     });
     res.json({ ok: true });
-  } catch(e) {
+  } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// Todas as rotas retornam index.html
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Diário rodando na porta ${PORT}`);
+  console.log(`Diario rodando na porta ${PORT}`);
 });

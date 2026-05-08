@@ -381,10 +381,13 @@ textarea:focus{border-color:#C1694F}
 
   <!-- HOJE -->
   <div class="page on" id="pg-hoje">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
       <div class="sbar" id="syncStatus" style="flex:1;margin-bottom:0">🔄 Carregando...</div>
       <button onclick="forcSync()" style="background:#C1694F;border:none;border-radius:8px;color:#fff;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:Georgia,serif">🔄 Sync</button>
+      <button onclick="rodarDiagnostico()" style="background:#8B5E52;border:none;border-radius:8px;color:#fff;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:Georgia,serif">🔧</button>
     </div>
+    <div id="diagBox" style="display:none;background:#fff;border:1px solid #C1694F;border-radius:8px;padding:10px;margin-bottom:14px;font-size:11px;color:#2C2C2C;white-space:pre-wrap;font-family:monospace;max-height:300px;overflow:auto"></div>
+    <div style="font-size:9px;color:#A08070;text-align:right;margin-bottom:8px" id="appVer"></div>
     <div class="stitle">Como você está hoje?</div>
     <div class="ssub">Cada hábito vale pontos de XP ⭐</div>
 
@@ -779,37 +782,51 @@ let calY=new Date().getFullYear(), calM=new Date().getMonth();
 // ── STORAGE ──
 // ── SUPABASE ──
 // ── API PROXY (via Railway server) ──
+const APP_VERSION = "2026-05-08-v2"; // Mude isso a cada deploy pra confirmar versão
+function dbg(m){ try{ console.log("[diario]", m); }catch{} }
+
+// fetch com timeout pra não travar a UI em rede ruim
+async function tFetch(url, opts={}, ms=10000) {
+  const ctrl = new AbortController();
+  const tid = setTimeout(()=>ctrl.abort(), ms);
+  try {
+    const r = await fetch(url, { ...opts, signal: ctrl.signal });
+    return r;
+  } finally {
+    clearTimeout(tid);
+  }
+}
+
 const sb = {
   async get(chave) {
     try {
-      const r = await fetch('/api/get/' + encodeURIComponent(chave));
+      const r = await tFetch('/api/get/' + encodeURIComponent(chave));
       if (!r.ok) return null;
       const data = await r.json();
       return data?.valor || null;
-    } catch(e) { dbg("❌ GET "+chave.slice(0,20)+": "+e.message); return null; }
+    } catch(e) { dbg("GET err "+chave.slice(0,20)+": "+e.message); return null; }
   },
   async set(chave, valor) {
     try {
-      const r = await fetch('/api/set', {
+      const r = await tFetch('/api/set', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chave, valor })
       });
-      if (!r.ok) { dbg("❌ SET "+chave.slice(0,20)+" HTTP "+r.status); return false; }
-      dbg("✓ SET "+chave.slice(0,20));
+      if (!r.ok) { dbg("SET HTTP "+r.status); return false; }
       return true;
-    } catch(e) { dbg("❌ SET "+chave.slice(0,20)+": "+e.message); return false; }
+    } catch(e) { dbg("SET err: "+e.message); return false; }
   },
   async getAll(prefix) {
     try {
-      const r = await fetch('/api/list/' + encodeURIComponent(prefix));
+      const r = await tFetch('/api/list/' + encodeURIComponent(prefix));
       if (!r.ok) return [];
       return await r.json();
-    } catch(e) { dbg("❌ LIST: "+e.message); return []; }
+    } catch(e) { dbg("LIST err: "+e.message); return []; }
   },
   async del(chave) {
     try {
-      await fetch('/api/del/' + encodeURIComponent(chave), { method: 'DELETE' });
+      await tFetch('/api/del/' + encodeURIComponent(chave), { method: 'DELETE' });
     } catch {}
   }
 };
@@ -890,9 +907,15 @@ function setStatus(m){const s=document.getElementById("syncStatus");if(s)s.textC
 
 async function forcSync(){
   setStatus("🔄 Sincronizando...");
+  // Se estávamos offline, tenta reabrir conexão chamando init() de novo
+  if (!useCloud) {
+    await init();
+    if (typeof loadToday==='function') loadToday();
+    return;
+  }
   try {
     const rows = await sb.getAll("d:");
-    if (rows.length > 0) {
+    if (rows && rows.length > 0) {
       rows.forEach(row => {
         try { const e = JSON.parse(row.valor); allData[e.date] = e; } catch {}
       });
@@ -906,6 +929,59 @@ async function forcSync(){
     showToast("toast","Erro de conexão. Tente novamente.","err");
   }
 }
+
+// ── DIAGNÓSTICO: mostra o erro real do servidor/Supabase ──
+async function rodarDiagnostico(){
+  const box = document.getElementById("diagBox");
+  if(!box) return;
+  box.style.display = "block";
+  box.textContent = "🔧 Rodando diagnóstico...\n";
+  const lines = [];
+  lines.push("Versão do app: " + APP_VERSION);
+  lines.push("Hora local: " + new Date().toISOString());
+  lines.push("Online (navigator): " + navigator.onLine);
+  lines.push("URL: " + location.href);
+  lines.push("");
+
+  // Teste 1: lista os registros do dia (mostra erro real do Supabase no body)
+  lines.push("→ Teste 1: GET /api/list/d:");
+  try {
+    const r = await tFetch('/api/list/d:', {}, 12000);
+    lines.push("  HTTP: " + r.status + " (ok=" + r.ok + ")");
+    const txt = await r.text();
+    lines.push("  Body (1ºs 800): " + txt.slice(0, 800));
+  } catch(e) {
+    lines.push("  Erro: " + (e.name||"") + " - " + (e.message||e));
+  }
+  lines.push("");
+
+  // Teste 2: SET de teste
+  lines.push("→ Teste 2: POST /api/set (chave de teste)");
+  try {
+    const r = await tFetch('/api/set', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chave: '__diag_app__', valor: new Date().toISOString() })
+    }, 12000);
+    lines.push("  HTTP: " + r.status);
+    const txt = await r.text();
+    lines.push("  Body: " + txt.slice(0, 500));
+  } catch(e) {
+    lines.push("  ❌ Erro: " + (e.message||e));
+  }
+  lines.push("");
+  lines.push("👉 Copie esse texto e me envie pra eu identificar a causa.");
+
+  box.textContent = lines.join("\n");
+}
+
+// Mostra versão pequena no topo
+(function showVer(){
+  try {
+    const v = document.getElementById("appVer");
+    if (v) v.textContent = "v " + APP_VERSION;
+  } catch {}
+})();
 function todayStr(){return new Date().toISOString().split("T")[0];}
 function fmtD(s){const[,m,d]=s.split("-");const ms=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];return`${parseInt(d)} de ${ms[parseInt(m)-1]}`;}
 
@@ -1235,26 +1311,39 @@ function renderLogLista(){
 
 // ── SAVE TODAY ──
 async function saveToday(){
-  const btn=document.getElementById("saveBtn");
-  btn.disabled=true;btn.textContent="Salvando...";
-  const td=todayStr(),mood=parseInt(document.getElementById("moodSlider").value),note=document.getElementById("noteArea").value;
-  const motivo=document.getElementById("motivoArea").value;
-  // Preserve existing logs
-  const existingLogs=allData[td]?.logs||[];
-  const entry={date:td,mood,emocoes:[...selectedEmos],motivo,chk:{...chk},note,noClass:semAula,logs:existingLogs,saved:new Date().toISOString()};
-  allData[td]=entry;
-  ls.set(allData);
-  clearDraft();
-  const ok=await sb.set("d:"+td,JSON.stringify(entry));
-  const activeItems=semAula?ITEMS.filter(i=>i.id!=="nosc"):ITEMS;
-  const allDone=activeItems.every(i=>chk[i.id]);
-  const xpE=activeItems.reduce((s,i)=>chk[i.id]?s+i.xp:s,0)+(allDone?30:0);
-  prevLvl=getLevel(totalXP).n;calcXP();
-  btn.disabled=false;btn.textContent="💾 Salvar registro do dia";
-  if (ok) {
-    showToast("toast",`⭐ +${xpE} XP! ☁️ Salvo na nuvem`,"ok");
-  } else {
-    showToast("toast",`⚠️ Sem conexão — salvo só no aparelho. Tente sincronizar depois.`,"err");
+  try {
+    const btn=document.getElementById("saveBtn");
+    if(btn){btn.disabled=true;btn.textContent="Salvando...";}
+    const td=todayStr();
+    const mood=parseInt(document.getElementById("moodSlider").value)||5;
+    const note=document.getElementById("noteArea").value||"";
+    const motivo=document.getElementById("motivoArea").value||"";
+    const existingLogs=allData[td]?.logs||[];
+    const entry={date:td,mood,emocoes:[...selectedEmos],motivo,chk:{...chk},note,noClass:semAula,logs:existingLogs,saved:new Date().toISOString()};
+
+    // 1) Salva local IMEDIATAMENTE (não espera nuvem)
+    allData[td]=entry;
+    ls.set(allData);
+    clearDraft();
+
+    // 2) Calcula XP e mostra feedback NA HORA
+    const activeItems=semAula?ITEMS.filter(i=>i.id!=="nosc"):ITEMS;
+    const allDone=activeItems.every(i=>chk[i.id]);
+    const xpE=activeItems.reduce((s,i)=>chk[i.id]?s+i.xp:s,0)+(allDone?30:0);
+    prevLvl=getLevel(totalXP).n;calcXP();
+    if(btn){btn.disabled=false;btn.textContent="💾 Salvar registro do dia";}
+    showToast("toast",`⭐ +${xpE} XP! 💾 Salvo`,"ok");
+
+    // 3) Tenta nuvem em background (sem travar a UI)
+    sb.set("d:"+td,JSON.stringify(entry)).then(ok=>{
+      if(ok){setStatus(`☁️ Sincronizado — ${Object.keys(allData).length} dias`);}
+      else{setStatus("⚠️ Salvo só no aparelho — sem conexão");}
+    }).catch(()=>{setStatus("⚠️ Salvo só no aparelho — sem conexão");});
+  } catch(err) {
+    console.error("saveToday erro:",err);
+    const btn=document.getElementById("saveBtn");
+    if(btn){btn.disabled=false;btn.textContent="💾 Salvar registro do dia";}
+    showToast("toast","❌ Erro ao salvar: "+(err.message||err),"err");
   }
 }
 
@@ -2258,59 +2347,50 @@ async function importarDados(){
     allData={...payload.registros};
     ls.set(allData);
     // Save each entry to cloud
-    for(const[date,e] of Object.entries(allData)){
-      await sb.set("d:"+date,JSON.stringify(e));
-    }
+    for(const[date,e]of Object.entries(allData)){await sb.set("d:"+date,JSON.stringify(e));}
   }
   if(payload.recompensas){
-    recompensas=payload.recompensas;
+    recompensas=[...payload.recompensas];
     ls.setArr("rc",recompensas);
     await sb.set("recompensas",JSON.stringify(recompensas));
   }
   if(payload.pensamentos){
-    pensamentos=payload.pensamentos;
+    pensamentos=[...payload.pensamentos];
     ls.setArr("pensamentos",pensamentos);
     await sb.set("pensamentos",JSON.stringify(pensamentos));
   }
   if(payload.saudeItems){
-    saudeItems=payload.saudeItems;
+    saudeItems=[...payload.saudeItems];
     ls.setArr("saude",saudeItems);
     await sb.set("saude",JSON.stringify(saudeItems));
   }
   if(payload.rotina_items){
-    ITEMS=payload.rotina_items;
-    await saveITEMS();
+    ITEMS=[...payload.rotina_items];
+    ls.setArr("rotina_items",ITEMS);
+    await sb.set("rotina_items",JSON.stringify(ITEMS));
   }
-
-  prevLvl=1;
-  calcXP();
-  loadToday();
+  calcXP();loadToday();renderHist();renderCal();renderPensamentos&&renderPensamentos();
   document.getElementById("importJson").value="";
-  showToast("importToast","✓ Dados importados com sucesso! 🧡","ok");
+  showToast("importToast","Dados importados com sucesso!","ok");
 }
 
 init();
 
-// ── KILL-SWITCH: limpa service worker e caches antigas ──
-// Não registra nenhum service worker novo: o app roda 100% online.
+// KILL-SWITCH: limpa service worker e caches antigas, sem registrar nenhum novo
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
       const regs = await navigator.serviceWorker.getRegistrations();
-      for (const reg of regs) {
-        try { await reg.unregister(); } catch {}
-      }
+      for (const reg of regs) { try { await reg.unregister(); } catch {} }
       const keys = await caches.keys();
-      for (const key of keys) {
-        try { await caches.delete(key); } catch {}
-      }
+      for (const key of keys) { try { await caches.delete(key); } catch {} }
     } catch (e) {}
   });
 }
 
-// ── AUTO-SYNC: re-puxa dados do servidor quando app volta ao foco ──
+// AUTO-SYNC: re-puxa dados do servidor quando app volta ao foco / online / a cada 60s
 let _lastSync = Date.now();
-async function autoResync(reason) {
+async function autoResync() {
   if (!useCloud) return;
   try {
     const rows = await sb.getAll("d:");
@@ -2319,7 +2399,6 @@ async function autoResync(reason) {
         try {
           const e = JSON.parse(row.valor);
           const cur = allData[e.date];
-          // Se o servidor tem versão mais nova, substitui
           if (!cur || new Date(e.saved||0) >= new Date(cur.saved||0)) {
             allData[e.date] = e;
           }
@@ -2327,7 +2406,6 @@ async function autoResync(reason) {
       });
       ls.set(allData);
     }
-    // Recarrega listas auxiliares
     const rv = await sb.get("recompensas");
     if (rv) { try { recompensas = JSON.parse(rv); ls.setArr("rc", recompensas); } catch {} }
     const rp = await sb.get("pensamentos");
@@ -2338,33 +2416,24 @@ async function autoResync(reason) {
     if (rr) { try { relatorios = JSON.parse(rr); ls.setArr("relatorios", relatorios); } catch {} }
     const ri = await sb.get("rotina_items");
     if (ri) { try { ITEMS = JSON.parse(ri); ls.setArr("rotina_items", ITEMS); } catch {} }
-
     _lastSync = Date.now();
     if (typeof loadToday === 'function') loadToday();
     if (typeof renderHist === 'function') renderHist();
     if (typeof renderCal === 'function') renderCal();
     if (typeof renderPensamentos === 'function') renderPensamentos();
-    setStatus(`☁️ Sincronizado — ${Object.keys(allData).length} dias`);
+    setStatus("Sincronizado - " + Object.keys(allData).length + " dias");
   } catch (e) {
-    setStatus("⚠️ Sem conexão — tentando de novo...");
+    setStatus("Sem conexao - tentando de novo...");
   }
 }
 
-// Re-sincroniza quando a aba volta a ficar visível (ex: voltar pro app no celular)
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
-    // Só re-sincroniza se passou mais de 5s desde o último sync
-    if (Date.now() - _lastSync > 5000) autoResync('visibility');
+    if (Date.now() - _lastSync > 5000) autoResync();
   }
 });
-
-// Re-sincroniza quando a conexão volta
-window.addEventListener('online', () => autoResync('online'));
-
-// Re-sincroniza periodicamente (a cada 60s) caso o app fique aberto
-setInterval(() => {
-  if (document.visibilityState === 'visible') autoResync('interval');
-}, 60000);
+window.addEventListener('online', () => autoResync());
+setInterval(() => { if (document.visibilityState === 'visible') autoResync(); }, 60000);
 </script>
 </body>
 </html>
