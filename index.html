@@ -752,7 +752,7 @@ let calY=new Date().getFullYear(), calM=new Date().getMonth();
 // ── STORAGE ──
 // ── SUPABASE ──
 // ── API PROXY (via Railway server) ──
-const APP_VERSION = "2026-05-08-v5"; // Mude isso a cada deploy pra confirmar versão
+const APP_VERSION = "2026-05-08-v6"; // Mude isso a cada deploy pra confirmar versão
 function dbg(m){ try{ console.log("[diario]", m); }catch{} }
 
 // ── HELPERS de hora (selects HH/MM, sem time picker nativo) ──
@@ -2439,64 +2439,6 @@ if ('serviceWorker' in navigator) {
 let _lastSync = Date.now();
 async function autoResync() {
   if (!useCloud) return;
-  try {
-    const rows = await sb.getAll("d:");
-    if (rows && rows.length) {
-      rows.forEach(row => {
-        try {
-          const e = JSON.parse(row.valor);
-          const cur = allData[e.date];
-          if (!cur || new Date(e.saved||0) >= new Date(cur.saved||0)) {
-            allData[e.date] = e;
-          }
-        } catch {}
-      });
-      ls.set(allData);
-    }
-    function mergeArr(serverRaw, localArr){
-      if(!serverRaw) return localArr;
-      try {
-        const parsed = JSON.parse(serverRaw);
-        if (!Array.isArray(parsed)) return localArr;
-        if (parsed.length === 0 && localArr.length > 0) return localArr;
-        return parsed;
-      } catch { return localArr; }
-    }
-    const rv = await sb.get("recompensas");
-    recompensas = mergeArr(rv, recompensas); ls.setArr("rc", recompensas);
-    const rp = await sb.get("pensamentos");
-    pensamentos = mergeArr(rp, pensamentos); ls.setArr("pensamentos", pensamentos);
-    const rs = await sb.get("saude");
-    saudeItems = mergeArr(rs, saudeItems); ls.setArr("saude", saudeItems);
-    const rr = await sb.get("relatorios");
-    relatorios = mergeArr(rr, relatorios); ls.setArr("relatorios", relatorios);
-    const ri = await sb.get("rotina_items");
-    ITEMS = mergeArr(ri, ITEMS); ls.setArr("rotina_items", ITEMS);
-    _lastSync = Date.now();
-    if (typeof renderHist === 'function') renderHist();
-    if (typeof renderCal === 'function') renderCal();
-    if (typeof renderPensamentos === 'function') renderPensamentos();
-    if (typeof renderSaude === 'function') renderSaude();
-    if (typeof renderRecomp === 'function') renderRecomp();
-    setStatus("Sincronizado - " + Object.keys(allData).length + " dias");
-  } catch (e) {
-    setStatus("Sem conexao - tentando de novo...");
-  }
-}
-
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    if (Date.now() - _lastSync > 5000) autoResync();
-  }
-});
-window.addEventListener('online', () => autoResync());
-setInterval(() => { if (document.visibilityState === 'visible') autoResync(); }, 60000);
-</script>
-</body>
-</html>
-/body>
-</html>
-Cloud) return;
   try {
     const rows = await sb.getAll("d:");
     if (rows && rows.length) {
